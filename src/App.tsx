@@ -1,0 +1,306 @@
+import { useEffect, useMemo, useState } from 'react'
+import {
+  Activity, ArrowDown, ArrowLeft, ArrowRight, BookOpen, BrainCircuit, Check,
+  ChevronDown, CircleHelp, Clock3, Code2, Cpu, Download, GitBranch, GraduationCap,
+  Layers3, ListChecks, Network, Pause, Play, RotateCcw, Save, Search, Send,
+  Settings2, ShieldCheck, Sparkles, Target, Users, Waypoints, Zap
+} from 'lucide-react'
+import { StudentPanel } from './components/StudentPanel'
+import { TeacherDashboard } from './components/TeacherDashboard'
+import { slug, topicStats, useActivityTracker, useDB, withAttempt, withStudent, type TopicRef } from './domain/tracking'
+
+type UnitId = 'u1' | 'u2' | 'u3' | 'u4' | 'u5'
+type Mode = 'explore' | 'student' | 'teacher'
+type Topic = { id: string; title: string; subtitle: string; description: string; complexity: string; tags: string[] }
+type Unit = { id: UnitId; number: string; title: string; short: string; description: string; topics: Topic[] }
+
+const units: Unit[] = [
+  { id: 'u1', number: '01', title: 'Algorithm analysis', short: 'Foundations', description: 'Model computation, count operations, and justify asymptotic bounds.', topics: [
+    { id: 'ram', title: 'RAM model', subtitle: 'Primitive operations & memory', description: 'Treat basic operations as unit-cost steps, then make the assumptions behind a count explicit.', complexity: 'Cost model', tags: ['unit-cost assumptions', 'operation count'] },
+    { id: 'asymptotic', title: 'Asymptotic notation', subtitle: 'Compare growth rates', description: 'Compare upper, lower, and tight bounds without confusing them with best-, average-, and worst-case inputs.', complexity: 'O · Ω · Θ', tags: ['growth', 'bounds'] },
+    { id: 'complexity', title: 'Complexity analysis', subtitle: 'Trace → count → derive', description: 'Translate loop and recursion structure into a count, then keep the dominant term.', complexity: 'T(n), S(n)', tags: ['loops', 'recurrences'] },
+    { id: 'paradigms', title: 'Algorithmic paradigms', subtitle: 'Choose a strategy', description: 'Understand the proof obligations behind divide and conquer, greedy, backtracking, and branch and bound.', complexity: 'Strategy', tags: ['design', 'correctness'] },
+  ]},
+  { id: 'u2', number: '02', title: 'Searching & sorting', short: 'Data structures', description: 'Inspect ordering, invariants, tree balance, hashing, and string-matching shifts.', topics: [
+    { id: 'sorting', title: 'Sorting lab', subtitle: 'Quick · merge · heap sort', description: 'Step through comparison-based sorting and observe comparisons, writes, and intermediate arrays.', complexity: 'O(n log n) typical', tags: ['merge sort', 'quick sort', 'heap sort'] },
+    { id: 'trees', title: 'Search trees', subtitle: 'BST · AVL · red-black · B-tree', description: 'Compare search-tree shape, balance invariants, rotations, and multiway nodes.', complexity: 'O(log n) balanced', tags: ['invariant', 'rotation'] },
+    { id: 'hashing', title: 'Hashing & heaps', subtitle: 'Collisions & priority queues', description: 'Explore collision resolution, load factor, heap order, and priority queue operations.', complexity: 'Expected O(1) hash lookup', tags: ['load factor', 'heap property'] },
+    { id: 'matching', title: 'String matching', subtitle: 'KMP & Boyer–Moore', description: 'See how preprocessing avoids rechecking text characters after a mismatch.', complexity: 'KMP O(n + m)', tags: ['prefix table', 'bad-character shift'] },
+  ]},
+  { id: 'u3', number: '03', title: 'Graph algorithms', short: 'Graph traversal', description: 'Move from graph representation to traversal order, DAG ordering, and shortest paths.', topics: [
+    { id: 'representations', title: 'Representations', subtitle: 'Adjacency list & matrix', description: 'Compare storage costs and which representation suits sparse or dense graphs.', complexity: 'List O(V + E)', tags: ['vertices', 'edges'] },
+    { id: 'traversal', title: 'BFS & DFS', subtitle: 'Queue vs stack', description: 'Reveal visit order, frontier state, parent links, and connected components.', complexity: 'O(V + E)', tags: ['queue', 'stack', 'visited'] },
+    { id: 'topological', title: 'Topological order', subtitle: 'DAG dependencies', description: 'Produce an ordering where every directed edge points from earlier to later.', complexity: 'O(V + E)', tags: ['DAG', 'indegree'] },
+    { id: 'shortest', title: 'Single-source shortest path', subtitle: 'Relax edges', description: 'Trace distance estimates and predecessor changes during relaxation.', complexity: 'Dijkstra O((V+E) log V)', tags: ['distance', 'relaxation'] },
+  ]},
+  { id: 'u4', number: '04', title: 'Greedy & dynamic programming', short: 'Optimization', description: 'Compare local-choice strategies with state-based optimization and reconstruction.', topics: [
+    { id: 'mst', title: 'Minimum spanning trees', subtitle: 'Kruskal & Prim', description: 'Build a spanning tree while avoiding cycles or growing from a frontier.', complexity: 'O(E log V)', tags: ['cut property', 'cycle'] },
+    { id: 'greedy', title: 'Greedy algorithms', subtitle: 'Dijkstra · knapsack · Huffman', description: 'Test feasibility, choose locally, and identify the proof property that makes a greedy choice safe.', complexity: 'Problem-dependent', tags: ['choice property', 'exchange argument'] },
+    { id: 'dp', title: 'Dynamic programming', subtitle: 'State · recurrence · table', description: 'Define states, establish a recurrence, fill a table in dependency order, and reconstruct a solution.', complexity: 'States × transitions', tags: ['memoization', 'tabulation'] },
+  ]},
+  { id: 'u5', number: '05', title: 'Complexity & intractability', short: 'Limits of computation', description: 'Classify decision problems, reason about reductions, and inspect combinatorial search.', topics: [
+    { id: 'pnp', title: 'P, NP & NP-completeness', subtitle: 'Decision problems', description: 'Distinguish solving a problem from verifying a proposed certificate in polynomial time.', complexity: 'Complexity classes', tags: ['certificate', 'verification'] },
+    { id: 'reductions', title: 'Polynomial reductions', subtitle: 'Transform problems', description: 'Use a polynomial-time transformation to transfer hardness from one problem to another.', complexity: 'A ≤p B', tags: ['mapping', 'hardness'] },
+    { id: 'sat', title: 'SAT & Hamiltonian cycle', subtitle: 'Certificates and constraints', description: 'Evaluate Boolean assignments and understand what makes a candidate satisfy a decision problem.', complexity: 'Exponential search', tags: ['CNF', 'cycle'] },
+    { id: 'tsp', title: 'Travelling salesperson', subtitle: 'Exact search & bounds', description: 'Compare candidate tours and understand why pruning and approximation matter as instances grow.', complexity: 'Factorial brute force', tags: ['tour', 'branch and bound'] },
+  ]},
+]
+
+const curve = (n: number, kind: string) => kind === 'constant' ? 1 : kind === 'log' ? Math.log2(n) : kind === 'linear' ? n : kind === 'nlogn' ? n * Math.log2(n) : n * n
+
+function App() {
+  const [mode, setMode] = useState<Mode>('explore')
+  const [activeUnit, setActiveUnit] = useState<UnitId>('u1')
+  const [activeTopic, setActiveTopic] = useState('ram')
+  const [n, setN] = useState(8)
+  const [step, setStep] = useState(0)
+  const [sortKind, setSortKind] = useState<'bubble' | 'selection' | 'insertion' | 'merge'>('bubble')
+  const [arrayInput, setArrayInput] = useState('8, 3, 6, 1, 7, 2')
+  const [graphAlgorithm, setGraphAlgorithm] = useState<'bfs' | 'dfs'>('bfs')
+  const [graphStart, setGraphStart] = useState(0)
+  const [knapsackMode, setKnapsackMode] = useState<'greedy' | 'dp'>('dp')
+  const [search, setSearch] = useState('')
+  const [showTheory, setShowTheory] = useState(true)
+  const [quickReveal, setQuickReveal] = useState(false)
+  const [db, updateDB] = useDB()
+  const [studentName, setStudentName] = useState(() => { try { return localStorage.getItem('daalab-student') ?? '' } catch { return '' } })
+
+  const unit = units.find(u => u.id === activeUnit)!
+  const topic = units.flatMap(u => u.topics).find(t => t.id === activeTopic) ?? unit.topics[0]
+  const topicRefs: TopicRef[] = units.flatMap(u => u.topics.map(t => ({ id: t.id, title: t.title, unit: `Unit ${u.number}` })))
+  const studentId = slug(studentName)
+  const student = db.students[studentId] ?? null
+  useActivityTracker(updateDB, student ? studentId : null, mode === 'explore', activeTopic, step)
+  const login = (name: string) => { updateDB(d => withStudent(d, name)); setStudentName(name.trim()); try { localStorage.setItem('daalab-student', name.trim()) } catch { /* ignore */ } }
+  const logout = () => { setStudentName(''); try { localStorage.removeItem('daalab-student') } catch { /* ignore */ } }
+  const openVisualizer = (topicId: string) => { setTopic(topicId); setMode('explore') }
+
+  const setTopic = (topicId: string, unitId?: UnitId) => {
+    const parent = units.find(u => u.topics.some(t => t.id === topicId))
+    setActiveTopic(topicId); setActiveUnit(unitId ?? parent?.id ?? 'u1'); setStep(0); setQuickReveal(false)
+  }
+  const filteredUnits = units.map(u => ({ ...u, topics: u.topics.filter(t => `${t.title} ${t.subtitle} ${t.tags.join(' ')}`.toLowerCase().includes(search.toLowerCase())) })).filter(u => u.topics.length)
+  const topicIndex = units.flatMap(u => u.topics).findIndex(t => t.id === activeTopic)
+  const allTopics = units.flatMap(u => u.topics)
+  const masteredPct = student ? Math.round(100 * allTopics.filter(t => (topicStats(student, t.id).mastery ?? 0) >= 75).length / allTopics.length) : 0
+
+  const sortTrace = useMemo(() => {
+    const values = arrayInput.split(',').map(v => Number(v.trim())).filter(v => Number.isFinite(v)).slice(0, 10)
+    const a = values.length ? [...values] : [5, 2, 4, 1]
+    const trace: { a: number[]; active: number[]; line: string; detail: string; count: number }[] = []
+    trace.push({ a: [...a], active: [], line: 'Input array', detail: 'Start with the unsorted sequence. Each step below is an explicit comparison or movement.', count: 0 })
+    if (sortKind === 'bubble') {
+      for (let end = a.length - 1; end > 0; end--) for (let i = 0; i < end; i++) { const swapped = a[i] > a[i + 1]; trace.push({ a: [...a], active: [i, i + 1], line: `Compare a[${i}] and a[${i + 1}]`, detail: swapped ? `${a[i]} > ${a[i + 1]}, so swap adjacent values.` : `${a[i]} ≤ ${a[i + 1]}, so their order is already valid.`, count: 1 }); if (swapped) [a[i], a[i + 1]] = [a[i + 1], a[i]]; trace.push({ a: [...a], active: [i, i + 1], line: swapped ? 'After swap' : 'No swap', detail: 'The array state after this comparison.', count: 0 }) }
+    } else if (sortKind === 'selection') {
+      for (let i = 0; i < a.length - 1; i++) { let min = i; for (let j = i + 1; j < a.length; j++) { trace.push({ a: [...a], active: [min, j], line: `Compare candidate ${a[min]} with ${a[j]}`, detail: a[j] < a[min] ? `${a[j]} becomes the smallest candidate in the unsorted suffix.` : `Keep ${a[min]} as the current minimum.`, count: 1 }); if (a[j] < a[min]) min = j } [a[i], a[min]] = [a[min], a[i]]; trace.push({ a: [...a], active: [i, min], line: `Place minimum at index ${i}`, detail: 'The prefix through this index is now sorted.', count: 0 }) }
+    } else if (sortKind === 'insertion') {
+      for (let i = 1; i < a.length; i++) { const key = a[i]; let j = i - 1; while (j >= 0 && a[j] > key) { trace.push({ a: [...a], active: [j, j + 1], line: `Shift ${a[j]} right`, detail: `${a[j]} is greater than key ${key}; make room in the sorted prefix.`, count: 1 }); a[j + 1] = a[j]; j-- } a[j + 1] = key; trace.push({ a: [...a], active: [j + 1], line: `Insert key ${key}`, detail: `The prefix a[0…${i}] is sorted after insertion.`, count: 0 }) }
+    } else {
+      const mergeSort = (lo: number, hi: number) => { if (hi - lo <= 1) return; const mid = Math.floor((lo + hi) / 2); mergeSort(lo, mid); mergeSort(mid, hi); const left = a.slice(lo, mid), right = a.slice(mid, hi); let i = 0, j = 0, k = lo; while (i < left.length && j < right.length) { trace.push({ a: [...a], active: [lo + i, mid + j], line: `Merge ${left[i]} and ${right[j]}`, detail: `Compare the next unused values from sorted halves [${left.join(', ')}] and [${right.join(', ')}].`, count: 1 }); a[k++] = left[i] <= right[j] ? left[i++] : right[j++] } while (i < left.length) a[k++] = left[i++]; while (j < right.length) a[k++] = right[j++]; trace.push({ a: [...a], active: Array.from({ length: hi - lo }, (_, z) => lo + z), line: `Merged range ${lo}…${hi - 1}`, detail: 'The current range is sorted; merging costs linear work in the range length.', count: 0 }) }
+      mergeSort(0, a.length)
+    }
+    trace.push({ a: [...a], active: [], line: 'Sorted output', detail: 'The complete array is sorted in nondecreasing order.', count: 0 })
+    return trace
+  }, [arrayInput, sortKind])
+  const currentSort = sortTrace[Math.min(step, sortTrace.length - 1)]
+
+  const graph = [[0, 1], [0, 2], [1, 3], [1, 4], [2, 4], [3, 5], [4, 5]]
+  const graphTraversal = useMemo(() => {
+    const adj = Array.from({ length: 6 }, () => [] as number[])
+    graph.forEach(([a, b]) => { adj[a].push(b); adj[b].push(a) })
+    const seen = new Set<number>(), order: number[] = [], frames: { node: number; frontier: number[]; visited: number[]; note: string }[] = []
+    const frontier = [graphStart]; seen.add(graphStart)
+    while (frontier.length) {
+      const node = graphAlgorithm === 'bfs' ? frontier.shift()! : frontier.pop()!
+      order.push(node); frames.push({ node, frontier: [...frontier], visited: [...order], note: `${graphAlgorithm.toUpperCase()} visits vertex ${node}. Its unvisited neighbours are considered in ascending order.` })
+      const next = graphAlgorithm === 'bfs' ? adj[node] : [...adj[node]].reverse()
+      for (const v of next) if (!seen.has(v)) { seen.add(v); frontier.push(v) }
+    }
+    return { order, frames }
+  }, [graphAlgorithm, graphStart])
+
+  const items = [{ w: 2, v: 12 }, { w: 3, v: 20 }, { w: 4, v: 24 }, { w: 5, v: 25 }]
+  const dpTable = useMemo(() => { const cap = 8; const table = Array.from({ length: items.length + 1 }, () => Array(cap + 1).fill(0)); for (let i = 1; i <= items.length; i++) for (let w = 0; w <= cap; w++) table[i][w] = items[i - 1].w <= w ? Math.max(table[i - 1][w], items[i - 1].v + table[i - 1][w - items[i - 1].w]) : table[i - 1][w]; return table }, [])
+
+  const changeMode = (next: Mode) => setMode(next)
+
+  return <div className="app-shell">
+    <aside className="sidebar">
+      <div className="brand"><div className="brand-mark"><Waypoints size={23}/></div><div><strong>DAA<span>LAB</span></strong><small>ALGORITHM STUDIO</small></div></div>
+      <div className="course-chip"><span className="live-dot"/> DESIGN & ANALYSIS OF ALGORITHMS <ChevronDown size={13}/></div>
+      <div className="side-label">COURSE CONTENT <span>{allTopics.length} TOPICS</span></div>
+      <div className="search-wrap"><Search size={15}/><input aria-label="Search topics" value={search} onChange={e => setSearch(e.target.value)} placeholder="Find a topic…"/></div>
+      <nav className="unit-nav">{filteredUnits.map(u => <div className="unit-group" key={u.id}><button className={`unit-link ${activeUnit === u.id ? 'unit-active' : ''}`} onClick={() => { setActiveUnit(u.id); if (!u.topics.some(t => t.id === activeTopic)) setTopic(u.topics[0].id, u.id) }}><span className="unit-number">{u.number}</span><span className="unit-title">{u.title}</span><span className="unit-progress">{u.topics.filter(t => student && (topicStats(student, t.id).mastery ?? 0) >= 75).length}/{u.topics.length}</span></button>{activeUnit === u.id && <div className="topic-links">{u.topics.map(t => <button key={t.id} className={`topic-link ${activeTopic === t.id ? 'topic-active' : ''}`} onClick={() => setTopic(t.id, u.id)}><span className="topic-dot"/><span>{t.title}</span></button>)}</div>}</div>)}</nav>
+      <div className="sidebar-bottom"><div className="side-progress-head"><span>TOPICS MASTERED</span><strong>{masteredPct}%</strong></div><div className="progress-track"><span style={{ width: `${masteredPct}%` }}/></div><p>Mastered = 75%+ on recent practice. Solve problems to build your profile.</p><div className="sidebar-user"><div className="avatar"><GraduationCap size={18}/></div><div><strong>{student?.name ?? 'Not signed in'}</strong><small>{student ? 'Progress is tracked' : 'Open Student mode to start'}</small></div><Settings2 size={16}/></div></div>
+    </aside>
+
+    <main className="main-area">
+      <header className="topbar"><div className="breadcrumb"><span>COURSE</span><ArrowRight size={13}/><span>{unit.number} / {unit.title.toUpperCase()}</span><ArrowRight size={13}/><strong>{topic.title}</strong></div><div className="topbar-right"><span className="status-pill"><span className="live-dot"/> INTERACTIVE LAB</span><div className="mode-switch" role="group" aria-label="Workspace mode"><button className={mode === 'explore' ? 'selected' : ''} onClick={() => changeMode('explore')}><Sparkles size={14}/> Explore</button><button className={mode === 'student' ? 'selected' : ''} onClick={() => changeMode('student')}><GraduationCap size={14}/> Student</button><button className={mode === 'teacher' ? 'selected' : ''} onClick={() => changeMode('teacher')}><BookOpen size={14}/> Teacher</button></div></div></header>
+      <div className="content-area">
+        <section className="hero-card"><div className="hero-copy"><div className="eyebrow"><span/> UNIT {unit.number} <span className="eyebrow-divider">/</span> {unit.short.toUpperCase()}</div><h1>{topic.title}<br/><span>{topic.subtitle.toLowerCase()}.</span></h1><p>{topic.description}</p><div className="hero-pills"><span><Check size={13}/> Interactive experiments</span><span><Check size={13}/> Step-by-step reasoning</span><span><Check size={13}/> Complexity insights</span></div></div><div className="hero-art"><div className="art-orbit orbit-a"/><div className="art-orbit orbit-b"/><div className="art-core"><Network size={30}/><small>TRACE</small></div><div className="art-node node-1">O(n)</div><div className="art-node node-2">{unit.number}</div><div className="art-node node-3"><GitBranch size={17}/></div><div className="art-caption">MODEL <span>→</span> EXECUTE <span>→</span> PROVE</div></div></section>
+
+        {mode === 'teacher' && <TeacherDashboard db={db} update={updateDB} topics={topicRefs} onOpenVisualizer={openVisualizer}/>}
+        {mode === 'student' && <StudentPanel db={db} student={student} topics={topicRefs} activeTopic={activeTopic} onLogin={login} onLogout={logout} onAttempt={a => updateDB(d => withAttempt(d, studentId, a))} onOpenVisualizer={openVisualizer}/>}
+
+        {mode === 'explore' && <>
+          <section className="learning-toolbar"><div><span className="kicker">CONCEPT WORKSPACE</span><h2>Learn by changing the input</h2></div><button className="quiet-button" onClick={() => setShowTheory(v => !v)}><BookOpen size={15}/>{showTheory ? 'Hide' : 'Show'} theory</button></section>
+          {showTheory && <section className="theory-strip"><div className="theory-icon"><BrainCircuit size={19}/></div><div><span className="kicker">THE IDEA</span><p>{theoryFor(activeTopic)}</p><div className="tag-row">{topic.tags.map(tag => <span key={tag}>{tag}</span>)}</div></div><div className="theory-complexity"><small>COMPLEXITY / KEY PROPERTY</small><strong>{topic.complexity}</strong></div></section>}
+
+          {activeTopic === 'ram' && <section className="workspace-grid"><div className="panel"><div className="panel-heading"><div><span className="kicker">RAM MODEL SIMULATOR</span><h2>How many primitive steps?</h2><p>Change the input size and compare a fixed-cost operation with loop-based work.</p></div><span className="panel-icon"><Cpu size={19}/></span></div><div className="input-row"><label>Input size n <strong>{n}</strong></label><input type="range" min="2" max="20" value={n} onChange={e => setN(Number(e.target.value))}/></div><div className="operation-cards"><div><small>CONSTANT</small><strong>3</strong><span>operations</span><code>Θ(1)</code></div><div><small>SINGLE LOOP</small><strong>{n + 2}</strong><span>operations</span><code>Θ(n)</code></div><div><small>NESTED LOOP</small><strong>{n * n}</strong><span>body executions</span><code>Θ(n²)</code></div></div><div className="bar-compare">{[1, n, n * n].map((v, i) => <div className="bar-row" key={i}><span>{['Constant', 'Linear', 'Quadratic'][i]}</span><div><i style={{ width: `${Math.max(2, v / (n * n) * 100)}%` }}/></div><strong>{v}</strong></div>)}</div><div className="callout"><CircleHelp size={16}/><p><strong>Model assumption:</strong> primitive arithmetic, assignment, and indexed access each have constant cost. Real hardware runtime also depends on memory, cache, and implementation details.</p></div></div><div className="panel side-insight"><span className="kicker">THINK LIKE AN ANALYST</span><h3>What changes when n doubles?</h3><p>A constant-time operation stays constant. Linear work roughly doubles. Quadratic work grows by about four times.</p><div className="formula-card"><small>DOMINANT TERM</small><strong>T(n) = 2n² + 3n + 7</strong><span>Drop lower-order terms and constants → Θ(n²)</span></div><h3>Quick check</h3><p>If the inner loop executes n times for each of n outer iterations, how many body executions occur?</p><div className="answer-reveal"><button onClick={() => setQuickReveal(v => !v)}>{quickReveal ? 'Hide answer' : 'Reveal answer'}</button>{quickReveal && <strong>n × n = n²</strong>}</div></div></section>}
+
+          {activeTopic === 'asymptotic' && <section className="panel"><div className="panel-heading"><div><span className="kicker">GROWTH-RATE EXPLORER</span><h2>As n grows, what dominates?</h2><p>Illustrative operation counts; values are not measured runtime.</p></div><span className="panel-icon"><Activity size={19}/></span></div><div className="input-row"><label>Maximum n <strong>{n}</strong></label><input type="range" min="4" max="24" value={n} onChange={e => setN(Number(e.target.value))}/></div><div className="curve-chart"><div className="chart-y-label">RELATIVE WORK</div>{['constant', 'log', 'linear', 'nlogn', 'quadratic'].map((k, i) => <div className="curve-line" key={k}><span>{['1', 'log₂ n', 'n', 'n log n', 'n²'][i]}</span><div className="curve-track"><i className={`curve-fill c${i}`} style={{ width: `${Math.max(3, curve(n, k) / curve(n, 'quadratic') * 100)}%` }}/></div><b>{Math.round(curve(n, k) * 10) / 10}</b></div>)}</div><div className="definition-grid"><div><strong>O(g(n))</strong><span>Asymptotic upper bound</span></div><div><strong>Ω(g(n))</strong><span>Asymptotic lower bound</span></div><div><strong>Θ(g(n))</strong><span>Tight asymptotic bound</span></div></div><div className="callout"><CircleHelp size={16}/><p>Big-O does not inherently mean worst case, and Big-Ω does not inherently mean best case. Bounds and input-case analysis are different concepts.</p></div></section>}
+
+          {activeTopic === 'complexity' && <section className="workspace-grid"><div className="panel"><div className="panel-heading"><div><span className="kicker">COUNTING WORKBENCH</span><h2>Choose the execution pattern</h2></div><span className="panel-icon"><Layers3 size={19}/></span></div><div className="pattern-grid">{[{ label: 'Constant', f: 1, desc: 'Fixed number of steps' }, { label: 'Linear', f: n, desc: 'One pass over n items' }, { label: 'Logarithmic', f: Math.floor(Math.log2(n)) + 1, desc: 'Repeated halving' }, { label: 'Quadratic', f: n * n, desc: 'Nested full loops' }, { label: 'Linearithmic', f: Math.ceil(n * Math.log2(n)), desc: 'Divide and merge' }, { label: 'Triangular', f: n * (n + 1) / 2, desc: 'Inner loop shrinks' }].map(x => <div key={x.label}><span>{x.label}</span><strong>{Math.round(x.f)}</strong><small>{x.desc}</small></div>)}</div><div className="input-row"><label>Input size <strong>{n}</strong></label><input type="range" min="2" max="20" value={n} onChange={e => setN(Number(e.target.value))}/></div></div><div className="panel side-insight"><span className="kicker">DERIVATION RULE</span><h3>Keep the dominant growth</h3><div className="formula-card"><strong>3n² + 8n + 12</strong><ArrowDown size={18}/><strong>Θ(n²)</strong><span>As n grows, n² dominates the lower-order terms.</span></div><p>For recursive algorithms, write a recurrence and solve it with a justified method: substitution, recursion tree, or Master Theorem where applicable.</p></div></section>}
+
+          {activeTopic === 'paradigms' && <ParadigmExplorer/>}
+
+          {activeTopic === 'sorting' && <section className="panel"><div className="panel-heading"><div><span className="kicker">SORTING PLAYGROUND</span><h2>Watch the invariant evolve</h2><p>Each timeline entry is a real intermediate array state generated from the chosen input.</p></div><span className="panel-icon"><Activity size={19}/></span></div><div className="sort-controls"><label>Algorithm<select value={sortKind} onChange={e => { setSortKind(e.target.value as typeof sortKind); setStep(0) }}><option value="bubble">Bubble sort</option><option value="selection">Selection sort</option><option value="insertion">Insertion sort</option><option value="merge">Merge sort</option></select></label><label>Array values<input value={arrayInput} onChange={e => { setArrayInput(e.target.value); setStep(0) }} placeholder="8, 3, 6, 1"/></label></div><div className="array-stage"><div className="stage-head"><span>STEP {step + 1} / {sortTrace.length}</span><span>{currentSort.line}</span></div><div className="array-bars">{currentSort.a.map((v, i) => <div className="array-item" key={`${i}-${v}`}><div className={`array-bar ${currentSort.active.includes(i) ? 'bar-active' : ''}`} style={{ height: `${Math.max(20, v / Math.max(1, ...currentSort.a) * 140)}px` }}><span>{v}</span></div><small>{i}</small></div>)}</div><div className="stage-explanation"><strong>{currentSort.line}</strong><p>{currentSort.detail}</p></div><div className="step-controls"><button className="btn btn-secondary" onClick={() => setStep(0)}><RotateCcw size={14}/> Reset</button><button className="btn btn-secondary" disabled={step === 0} onClick={() => setStep(s => Math.max(0, s - 1))}><ArrowLeft size={14}/> Previous</button><button className="btn btn-primary" disabled={step >= sortTrace.length - 1} onClick={() => setStep(s => Math.min(sortTrace.length - 1, s + 1))}>Next step <ArrowRight size={14}/></button></div></div><div className="definition-grid"><div><strong>{sortKind === 'bubble' ? 'O(n²)' : sortKind === 'selection' ? 'O(n²)' : sortKind === 'insertion' ? 'O(n²)' : 'O(n log n)'}</strong><span>Worst-case time</span></div><div><strong>{sortKind === 'merge' ? 'O(n)' : 'O(1)'}</strong><span>Auxiliary space (typical array implementation)</span></div><div><strong>{sortKind === 'insertion' ? 'Adaptive' : sortKind === 'merge' ? 'Stable' : sortKind === 'selection' ? 'Few swaps' : 'Adjacent swaps'}</strong><span>Property to remember</span></div></div></section>}
+
+          {(activeTopic === 'trees' || activeTopic === 'hashing') && <StructureExplorer topic={activeTopic}/>}
+          {activeTopic === 'matching' && <MatchingExplorer/>}
+          {activeTopic === 'representations' && <RepresentationExplorer/>}
+          {(activeTopic === 'traversal' || activeTopic === 'topological' || activeTopic === 'shortest') && <section className="panel"><div className="panel-heading"><div><span className="kicker">GRAPH EXECUTION</span><h2>{activeTopic === 'traversal' ? 'BFS vs DFS frontier' : activeTopic === 'topological' ? 'Topological ordering' : 'Shortest-path relaxation'}</h2><p>Small graph chosen to make the state of the algorithm visible at every step.</p></div><span className="panel-icon"><Network size={19}/></span></div>{activeTopic === 'traversal' ? <><div className="sort-controls"><label>Traversal<select value={graphAlgorithm} onChange={e => { setGraphAlgorithm(e.target.value as typeof graphAlgorithm); setStep(0) }}><option value="bfs">Breadth-first search (queue)</option><option value="dfs">Depth-first search (stack)</option></select></label><label>Start vertex<select value={graphStart} onChange={e => { setGraphStart(Number(e.target.value)); setStep(0) }}>{[0,1,2,3,4,5].map(v => <option key={v} value={v}>Vertex {v}</option>)}</select></label></div><GraphView edges={graph} visited={graphTraversal.frames[Math.min(step, graphTraversal.frames.length - 1)]?.visited ?? []} current={graphTraversal.frames[Math.min(step, graphTraversal.frames.length - 1)]?.node ?? graphStart}/><div className="graph-state-grid"><div><small>VISIT ORDER</small><strong>{graphTraversal.order.slice(0, step + 1).join(' → ') || '—'}</strong></div><div><small>FRONTIER SIZE</small><strong>{graphTraversal.frames[Math.min(step, graphTraversal.frames.length - 1)]?.frontier.length ?? 0}</strong></div><div><small>COMPLEXITY</small><strong>O(V + E)</strong></div></div><div className="stage-explanation"><strong>{graphTraversal.frames[Math.min(step, graphTraversal.frames.length - 1)]?.note}</strong></div><div className="step-controls"><button className="btn btn-secondary" onClick={() => setStep(0)}><RotateCcw size={14}/> Reset</button><button className="btn btn-secondary" disabled={step === 0} onClick={() => setStep(s => s - 1)}><ArrowLeft size={14}/> Previous</button><button className="btn btn-primary" disabled={step >= graphTraversal.frames.length - 1} onClick={() => setStep(s => s + 1)}>Next visit <ArrowRight size={14}/></button></div></> : activeTopic === 'topological' ? <TopologicalExplorer/> : <ShortestPathExplorer/>}</section>}
+          {activeTopic === 'mst' && <MSTExplorer/>}
+          {activeTopic === 'greedy' && <section className="panel"><div className="panel-heading"><div><span className="kicker">GREEDY CHOICE LAB</span><h2>Fractional knapsack</h2><p>Compare choosing by value-to-weight ratio with taking items in the listed order.</p></div><span className="panel-icon"><Zap size={19}/></span></div><div className="input-row"><label>Capacity <strong>{n}</strong></label><input type="range" min="2" max="12" value={n} onChange={e => setN(Number(e.target.value))}/></div><div className="item-table"><div className="item-row item-header"><span>Item</span><span>Weight</span><span>Value</span><span>Value / weight</span></div>{items.map((it, i) => <div className="item-row" key={it.w}><span>Item {i + 1}</span><span>{it.w}</span><span>{it.v}</span><span>{(it.v / it.w).toFixed(2)}</span></div>)}</div><div className="callout"><CircleHelp size={16}/><p>Fractional knapsack admits the ratio-based greedy strategy. The same greedy choice is not generally optimal for 0/1 knapsack; use dynamic programming or another exact method.</p></div></section>}
+          {activeTopic === 'dp' && <section className="panel"><div className="panel-heading"><div><span className="kicker">DYNAMIC PROGRAMMING TABLE</span><h2>0/1 knapsack: fill the states</h2><p>Each cell stores the best value using the first i items at capacity w.</p></div><span className="panel-icon"><Layers3 size={19}/></span></div><div className="dp-table-wrap"><table className="dp-table"><thead><tr><th>i \ w</th>{dpTable[0].map((_, w) => <th key={w}>{w}</th>)}</tr></thead><tbody>{dpTable.map((row, i) => <tr key={i}><th>{i === 0 ? 'None' : `Item ${i}`}</th>{row.map((v, w) => <td key={w} className={i === dpTable.length - 1 && w === 8 ? 'dp-highlight' : ''}>{v}</td>)}</tr>)}</tbody></table></div><div className="definition-grid"><div><strong>State</strong><span>dp[i][w] = best value</span></div><div><strong>Choice</strong><span>Skip or take item i</span></div><div><strong>Answer</strong><span>dp[4][8] = {dpTable[4][8]}</span></div></div><div className="formula-card"><strong>dp[i][w] = max(skip, valueᵢ + dp[i−1][w−weightᵢ])</strong><span>Take only when the item fits; otherwise inherit the previous row.</span></div></section>}
+          {(activeTopic === 'pnp' || activeTopic === 'reductions') && <ComplexityClassExplorer topic={activeTopic}/>}
+          {activeTopic === 'sat' && <SATExplorer/>}
+          {activeTopic === 'tsp' && <TSPExplorer/>}
+          {activeTopic !== 'ram' && activeTopic !== 'asymptotic' && activeTopic !== 'complexity' && activeTopic !== 'paradigms' && activeTopic !== 'sorting' && activeTopic !== 'trees' && activeTopic !== 'hashing' && activeTopic !== 'matching' && activeTopic !== 'representations' && activeTopic !== 'traversal' && activeTopic !== 'topological' && activeTopic !== 'shortest' && activeTopic !== 'mst' && activeTopic !== 'greedy' && activeTopic !== 'dp' && activeTopic !== 'pnp' && activeTopic !== 'reductions' && activeTopic !== 'sat' && activeTopic !== 'tsp' && <div className="panel"><h2>{topic.title}</h2><p>{topic.description}</p></div>}
+        </>}
+
+        <section className="bottom-learning"><div className="bottom-icon"><Code2 size={19}/></div><div><span className="kicker">MAKE THE REASONING EXPLICIT</span><h3>Model → execute → explain → analyze</h3><p>Use the simulator to build intuition, then switch to Student mode to practice with auto-graded problems or Teacher mode to see class analytics.</p></div><button className="btn btn-secondary" onClick={() => changeMode(mode === 'student' ? 'explore' : mode === 'teacher' ? 'student' : 'student')}>{mode === 'student' ? 'Back to explore' : 'Open practice'} <ArrowRight size={14}/></button></section>
+        <footer className="app-footer"><span>DAA LAB · FIVE-UNIT INTERACTIVE COURSE</span><span>Prototype build · Browser-local data · No server accounts</span></footer>
+      </div>
+    </main>
+  </div>
+}
+
+function theoryFor(id: string) {
+  const text: Record<string, string> = {
+    ram: 'An algorithm runs on an abstract machine. Count primitive operations under explicit unit-cost assumptions rather than equating source-code lines with real elapsed time.', asymptotic: 'Asymptotic notation describes how functions compare for sufficiently large input sizes. O is an upper bound, Ω is a lower bound, and Θ is a tight bound.', complexity: 'Identify the basic operation, count how often it executes, express the count as T(n), then simplify to the dominant asymptotic term.', paradigms: 'Algorithmic paradigms are reusable design strategies. Their correctness comes from invariants, recurrences, exchange arguments, or sound pruning—not from the strategy name alone.', sorting: 'Sorting algorithms maintain different invariants: a sorted prefix, a sorted suffix, or sorted subarrays that are merged. Compare both work and auxiliary space.', trees: 'Search trees trade height for operation cost. AVL and red-black trees maintain balance invariants; B-trees keep multiple keys per node to reduce tree height.', hashing: 'Hashing maps keys to table positions. Collisions need a policy, and expected constant-time lookup depends on distribution and load-factor assumptions.', matching: 'KMP uses a prefix-function table to avoid rechecking matched text. Boyer–Moore uses mismatch shifts to skip alignments.', representations: 'Adjacency lists use O(V+E) space for sparse graphs; adjacency matrices use O(V²) space and make edge-existence checks constant-time.', traversal: 'BFS explores by distance layers using a queue. DFS follows a path using recursion or a stack. Both run in O(V+E) with adjacency lists.', topological: 'A topological order exists only for a directed acyclic graph. Indegree-based processing repeatedly removes vertices whose dependencies are satisfied.', shortest: 'Relaxing edge (u,v) tests whether dist[u] + w(u,v) improves dist[v]. Dijkstra requires nonnegative edge weights.', mst: 'A minimum spanning tree connects every vertex with minimum total edge weight and no cycles. Cut and cycle properties justify safe edge choices.', greedy: 'A greedy algorithm commits to a locally attractive feasible choice. A correctness proof—often an exchange argument or cut property—is essential.', dp: 'Dynamic programming defines subproblems, a recurrence, base cases, and an evaluation order. Overlapping subproblems alone are not enough; the state must capture what future decisions need.', pnp: 'P contains decision problems solvable in polynomial time. NP contains problems whose yes-certificates can be verified in polynomial time; whether P = NP is unknown.', reductions: 'A polynomial-time many-one reduction A ≤p B transforms instances of A into instances of B while preserving yes/no answers. If A is hard and reduces to B, B is at least as hard.', sat: 'SAT asks whether a Boolean formula has a satisfying assignment. A certificate is an assignment that can be checked against the formula in polynomial time.', tsp: 'TSP asks for a minimum-cost tour visiting each city once and returning to the start. Brute force checks factorially many tours; bounds can prune search but do not remove worst-case hardness.'
+  }
+  return text[id] ?? 'Inspect the algorithm state, identify the invariant, and connect each decision to its correctness argument and complexity.'
+}
+
+function ParadigmExplorer() {
+  const [choice, setChoice] = useState('divide')
+  const data: Record<string, { title: string; rule: string; example: string; proof: string; steps: string[] }> = {
+    divide: { title: 'Divide and conquer', rule: 'Split a problem into smaller instances, solve them, then combine the results.', example: 'Merge sort: divide, recursively sort, merge.', proof: 'Recurrence and correctness of the combine step.', steps: ['Divide input', 'Solve subproblems', 'Combine results'] },
+    greedy: { title: 'Greedy', rule: 'Choose the best feasible local option and commit to it.', example: 'Fractional knapsack by value-to-weight ratio.', proof: 'Greedy-choice property, often proved by exchange argument.', steps: ['Check feasibility', 'Choose locally best', 'Prove choice is safe'] },
+    backtracking: { title: 'Backtracking', rule: 'Explore partial candidates and undo a choice when it cannot lead to a valid solution.', example: 'N-Queens: place a queen only when constraints remain satisfied.', proof: 'The search must cover all viable candidates; pruning must be sound.', steps: ['Choose', 'Explore', 'Undo if invalid'] },
+    bnb: { title: 'Branch and bound', rule: 'Branch into decisions and prune states whose bound cannot beat the best known solution.', example: 'Exact optimization with an incumbent solution and a valid lower/upper bound.', proof: 'Bound must be valid for every completion of a partial state.', steps: ['Branch', 'Compute bound', 'Prune or continue'] },
+  }
+  const d = data[choice]
+  return <section className="panel"><div className="panel-heading"><div><span className="kicker">DESIGN STRATEGIES</span><h2>Choose the reasoning pattern</h2><p>Compare the mechanism and the proof obligation, not just the labels.</p></div><span className="panel-icon"><GitBranch size={19}/></span></div><div className="strategy-tabs">{Object.entries(data).map(([key, item]) => <button key={key} className={choice === key ? 'active' : ''} onClick={() => setChoice(key)}>{item.title}</button>)}</div><div className="strategy-detail"><div><span className="kicker">CORE PRINCIPLE</span><h3>{d.title}</h3><p>{d.rule}</p><div className="formula-card"><small>CANONICAL EXAMPLE</small><strong>{d.example}</strong></div><div className="callout"><ShieldCheck size={16}/><p><strong>Proof obligation:</strong> {d.proof}</p></div></div><div className="strategy-steps"><span className="kicker">CONTROL FLOW</span>{d.steps.map((s, i) => <div key={s}><b>{String(i + 1).padStart(2, '0')}</b><span>{s}</span></div>)}</div></div></section>
+}
+
+function StructureExplorer({ topic }: { topic: 'trees' | 'hashing' }) {
+  const [values, setValues] = useState('42, 18, 64, 9, 27')
+  const [key, setKey] = useState('27')
+  const nums = values.split(',').map(v => Number(v.trim())).filter(Number.isFinite).slice(0, 9)
+  const buckets = Array.from({ length: 7 }, () => [] as number[])
+  nums.forEach(v => buckets[Math.abs(v) % 7].push(v))
+  return <section className="panel"><div className="panel-heading"><div><span className="kicker">DATA STRUCTURE WORKBENCH</span><h2>{topic === 'trees' ? 'Search-tree shape & balance' : 'Hash table and collision handling'}</h2><p>{topic === 'trees' ? 'Insert a small key set and inspect how search decisions depend on structure.' : 'Change the keys and inspect the buckets generated by h(k) = k mod 7.'}</p></div><span className="panel-icon"><Layers3 size={19}/></span></div><div className="sort-controls"><label>Keys (comma-separated)<input value={values} onChange={e => setValues(e.target.value)}/></label><label>Search key<input value={key} onChange={e => setKey(e.target.value)}/></label></div>{topic === 'trees' ? <><div className="tree-visual">{nums.length ? <><div className="tree-root"><span>{nums[0]}</span></div><div className="tree-branches">{nums.slice(1).map((v, i) => <div key={`${v}-${i}`} className="tree-child"><span>{v}</span><small>{v < nums[0] ? 'left of root' : 'right of root'}</small></div>)}</div></> : <p>Enter at least one numeric key.</p>}</div><div className="callout"><CircleHelp size={16}/><p>This simplified diagram places inserted keys relative to the first key; it is not a complete BST insertion simulator and does not perform AVL/red-black rotations. In a real BST, the insertion path depends on every preceding comparison.</p></div><div className="definition-grid"><div><strong>BST</strong><span>Average O(log n), worst O(n)</span></div><div><strong>AVL</strong><span>Strictly height-balanced</span></div><div><strong>B-tree</strong><span>Multiway, disk-friendly index</span></div></div></> : <><div className="hash-buckets">{buckets.map((bucket, i) => <div className="hash-bucket" key={i}><b>{i}</b><div>{bucket.map(v => <span key={v} className={String(v) === key ? 'match' : ''}>{v}</span>)}{bucket.length === 0 && <small>empty</small>}</div></div>)}</div><div className="callout"><CircleHelp size={16}/><p>Collisions occur when different keys map to the same bucket. Chaining stores multiple keys per bucket; open addressing searches for another table slot. Expected O(1) lookup depends on load factor and hashing assumptions.</p></div></>}</section>
+}
+
+function MatchingExplorer() {
+  const [text, setText] = useState('ABABDABACDABABCABAB')
+  const [pattern, setPattern] = useState('ABABCABAB')
+  const [method, setMethod] = useState<'kmp' | 'bm'>('kmp')
+  const [at, setAt] = useState(0)
+  const safePattern = pattern.slice(0, 20)
+  const prefix = Array(safePattern.length).fill(0)
+  let len = 0
+  for (let i = 1; i < safePattern.length;) { if (safePattern[i] === safePattern[len]) prefix[i++] = ++len; else if (len) len = prefix[len - 1]; else prefix[i++] = 0 }
+  const match = text.indexOf(safePattern)
+  const shownAt = method === 'kmp' ? Math.max(0, Math.min(at, Math.max(0, text.length - safePattern.length))) : Math.max(0, Math.min(at, Math.max(0, text.length - safePattern.length)))
+  return <section className="panel"><div className="panel-heading"><div><span className="kicker">STRING-MATCHING LAB</span><h2>Align pattern against text</h2><p>Inspect KMP's prefix table or the mismatch-shift idea behind Boyer–Moore.</p></div><span className="panel-icon"><Search size={19}/></span></div><div className="sort-controls"><label>Text<input value={text} onChange={e => { setText(e.target.value.slice(0, 60)); setAt(0) }}/></label><label>Pattern<input value={pattern} onChange={e => { setPattern(e.target.value.slice(0, 20)); setAt(0) }}/></label></div><div className="strategy-tabs"><button className={method === 'kmp' ? 'active' : ''} onClick={() => setMethod('kmp')}>KMP prefix function</button><button className={method === 'bm' ? 'active' : ''} onClick={() => setMethod('bm')}>Boyer–Moore shift idea</button></div><div className="string-visual"><small>TEXT</small><div className="char-row">{text.split('').map((c, i) => <span className={i >= shownAt && i < shownAt + safePattern.length ? 'char-highlight' : ''} key={`${i}-${c}`}>{c}</span>)}</div><small>PATTERN AT SHIFT {shownAt}</small><div className="char-row pattern-row">{safePattern.split('').map((c, i) => <span key={`${i}-${c}`}>{c}</span>)}</div></div>{method === 'kmp' ? <div className="prefix-table"><strong>Prefix / LPS table</strong><div>{prefix.map((v, i) => <span key={i}><small>{safePattern[i] || '∅'}</small><b>{v}</b></span>)}</div><p>LPS[i] is the longest proper prefix of pattern[0…i] that is also a suffix.</p></div> : <div className="callout"><CircleHelp size={16}/><p>Boyer–Moore compares from the pattern's right side and can shift farther after a mismatch using preprocessing rules. This panel demonstrates alignment; it does not implement the full good-suffix and bad-character rules.</p></div>}<div className="step-controls"><button className="btn btn-secondary" onClick={() => setAt(0)}><RotateCcw size={14}/> Reset</button><button className="btn btn-primary" onClick={() => setAt(s => Math.min(Math.max(0, text.length - safePattern.length), s + 1))}>Shift right <ArrowRight size={14}/></button><span className="match-status">{match >= 0 ? `Exact match begins at index ${match}` : 'No exact match in current text'}</span></div></section>
+}
+
+function RepresentationExplorer() {
+  const [vertices, setVertices] = useState(6)
+  const [edges, setEdges] = useState(7)
+  return <section className="panel"><div className="panel-heading"><div><span className="kicker">REPRESENTATION COMPARISON</span><h2>Choose the right storage model</h2><p>Adjust graph size to compare the space growth of common representations.</p></div><span className="panel-icon"><Network size={19}/></span></div><div className="input-row"><label>Vertices V <strong>{vertices}</strong></label><input type="range" min="2" max="20" value={vertices} onChange={e => setVertices(Number(e.target.value))}/></div><div className="input-row"><label>Edges E <strong>{edges}</strong></label><input type="range" min="1" max={Math.max(1, vertices * (vertices - 1) / 2)} value={Math.min(edges, vertices * (vertices - 1) / 2)} onChange={e => setEdges(Number(e.target.value))}/></div><div className="operation-cards"><div><small>ADJACENCY LIST</small><strong>{vertices + 2 * Math.min(edges, vertices * (vertices - 1) / 2)}</strong><span>stored entries approx.</span><code>O(V + E)</code></div><div><small>ADJACENCY MATRIX</small><strong>{vertices * vertices}</strong><span>matrix cells</span><code>O(V²)</code></div><div><small>EDGE LIST</small><strong>{Math.min(edges, vertices * (vertices - 1) / 2) * 2}</strong><span>endpoint entries</span><code>O(E)</code></div></div><div className="callout"><CircleHelp size={16}/><p>Adjacency lists are often efficient for sparse graphs; matrices provide constant-time edge lookup but reserve space for every possible vertex pair. Exact counts depend on directedness and storage conventions.</p></div></section>
+}
+
+function GraphView({ edges, visited, current }: { edges: number[][]; visited: number[]; current: number }) {
+  const pos = [[50, 14], [24, 36], [76, 36], [16, 68], [65, 65], [44, 89]]
+  return <div className="graph-canvas"><svg viewBox="0 0 100 105" role="img" aria-label="Undirected graph traversal visualization">{edges.map(([a, b]) => <line key={`${a}-${b}`} x1={pos[a][0]} y1={pos[a][1]} x2={pos[b][0]} y2={pos[b][1]} stroke="#34485f" strokeWidth="1.1"/>)}{pos.map(([x, y], i) => <g key={i}><circle cx={x} cy={y} r="6.3" fill={i === current ? '#087fa7' : visited.includes(i) ? '#145b4c' : '#152338'} stroke={i === current ? '#68dcff' : visited.includes(i) ? '#54d6b0' : '#45617c'} strokeWidth=".8"/><text x={x} y={y + 1.4} textAnchor="middle" fontSize="5" fill="#edf7ff">{i}</text></g>)}</svg></div>
+}
+
+function TopologicalExplorer() {
+  const [step, setStep] = useState(0)
+  const order = ['Compile', 'Design', 'Test', 'Deploy']
+  const deps = [[0, 2], [1, 2], [2, 3]]
+  return <><div className="graph-canvas directed-graph"><div className={`dag-node ${step >= 1 ? 'visited' : ''}`}>Compile</div><div className={`dag-node ${step >= 1 ? 'visited' : ''}`}>Design</div><div className={`dag-node ${step >= 2 ? 'visited' : ''}`}>Test</div><div className={`dag-node ${step >= 3 ? 'visited' : ''}`}>Deploy</div><div className="dag-edges">Compile → Test · Design → Test · Test → Deploy</div></div><div className="graph-state-grid"><div><small>ORDER SO FAR</small><strong>{order.slice(0, step + 1).join(' → ')}</strong></div><div><small>EDGE RULE</small><strong>Prerequisite first</strong></div><div><small>COMPLEXITY</small><strong>O(V + E)</strong></div></div><div className="step-controls"><button className="btn btn-secondary" onClick={() => setStep(0)}><RotateCcw size={14}/> Reset</button><button className="btn btn-primary" disabled={step >= 3} onClick={() => setStep(s => s + 1)}>Process next <ArrowRight size={14}/></button></div><p className="muted-note">A valid topological order is not necessarily unique. If the graph contains a directed cycle, no topological ordering exists.</p></>
+}
+
+function ShortestPathExplorer() {
+  const [step, setStep] = useState(0)
+  const rounds = [{ d: [0, 4, 2, Infinity], note: 'Initialize source distance to 0 and all other distances to infinity.' }, { d: [0, 4, 2, 7], note: 'Relax edges from source: direct estimates become finite.' }, { d: [0, 3, 2, 6], note: 'A shorter route through an intermediate vertex improves the estimates.' }, { d: [0, 3, 2, 5], note: 'Continue relaxing edges until no distance can be improved.' }]
+  const r = rounds[step]
+  return <><div className="distance-grid">{r.d.map((d, i) => <div key={i} className={i === step ? 'distance-current' : ''}><small>DIST[{String.fromCharCode(65 + i)}]</small><strong>{Number.isFinite(d) ? d : '∞'}</strong></div>)}</div><div className="stage-explanation"><strong>Relaxation round {step + 1}</strong><p>{r.note}</p></div><div className="step-controls"><button className="btn btn-secondary" onClick={() => setStep(0)}><RotateCcw size={14}/> Reset</button><button className="btn btn-primary" disabled={step >= rounds.length - 1} onClick={() => setStep(s => s + 1)}>Next relaxation <ArrowRight size={14}/></button></div><div className="callout"><CircleHelp size={16}/><p>Illustrative distance updates. Dijkstra is valid only with nonnegative edge weights. For negative edges, Bellman–Ford is the standard single-source alternative (provided no reachable negative cycle invalidates finite shortest paths).</p></div></>
+}
+
+function MSTExplorer() {
+  type Edge = { a: string; b: string; w: number }
+  const verts = ['A', 'B', 'C', 'D']
+  const edges: Edge[] = [{ a: 'A', b: 'B', w: 1 }, { a: 'B', b: 'C', w: 2 }, { a: 'A', b: 'C', w: 4 }, { a: 'C', b: 'D', w: 3 }, { a: 'B', b: 'D', w: 5 }]
+  const [step, setStep] = useState(0)
+  const [method, setMethod] = useState<'kruskal' | 'prim'>('kruskal')
+  /** Real decision trace: Kruskal uses union-find to detect cycles, Prim grows from A by the cheapest crossing edge. */
+  const trace = useMemo(() => {
+    const out: { e: Edge; accepted: boolean; why: string }[] = []
+    if (method === 'kruskal') {
+      const parent: Record<string, string> = Object.fromEntries(verts.map(v => [v, v]))
+      const find = (v: string): string => parent[v] === v ? v : (parent[v] = find(parent[v]))
+      for (const e of [...edges].sort((x, y) => x.w - y.w)) {
+        const ra = find(e.a), rb = find(e.b)
+        if (ra !== rb) { parent[ra] = rb; out.push({ e, accepted: true, why: 'Joins two different components' }) }
+        else out.push({ e, accepted: false, why: 'Endpoints already connected: would form a cycle' })
+      }
+    } else {
+      const tree = new Set(['A'])
+      while (tree.size < verts.length) {
+        const e = edges.filter(x => tree.has(x.a) !== tree.has(x.b)).sort((x, y) => x.w - y.w)[0]
+        out.push({ e, accepted: true, why: `Cheapest edge leaving {${[...tree].join(', ')}}` })
+        tree.add(tree.has(e.a) ? e.b : e.a)
+      }
+    }
+    return out
+  }, [method])
+  const chosen = trace.slice(0, step).filter(t => t.accepted)
+  const last = step > 0 ? trace[step - 1] : null
+  return <section className="panel"><div className="panel-heading"><div><span className="kicker">SPANNING TREE BUILDER</span><h2>Kruskal vs Prim</h2><p>Each decision below is computed by the algorithm, not hardcoded: accepted edges join components; skipped edges would close a cycle.</p></div><span className="panel-icon"><Waypoints size={19}/></span></div>
+    <div className="strategy-tabs"><button className={method === 'kruskal' ? 'active' : ''} onClick={() => { setMethod('kruskal'); setStep(0) }}>Kruskal · sort edges</button><button className={method === 'prim' ? 'active' : ''} onClick={() => { setMethod('prim'); setStep(0) }}>Prim · grow from A</button></div>
+    <div className="item-table"><div className="item-row item-header"><span>Edge</span><span>Weight</span><span>Decision</span><span>Why</span></div>{trace.map((t, i) => <div className={`item-row ${i < step && t.accepted ? 'selected-edge' : ''}`} key={`${t.e.a}${t.e.b}`}><span>{t.e.a} — {t.e.b}</span><span>{t.e.w}</span><span>{i < step ? (t.accepted ? 'Accepted' : 'Skipped') : i === step ? 'Next' : 'Pending'}</span><span>{i < step ? t.why : '—'}</span></div>)}</div>
+    <div className="graph-state-grid"><div><small>EDGES SELECTED</small><strong>{chosen.map(t => `${t.e.a}${t.e.b}`).join(', ') || '—'}</strong></div><div><small>TOTAL WEIGHT</small><strong>{chosen.reduce((sum, t) => sum + t.e.w, 0)}</strong></div><div><small>GOAL</small><strong>{verts.length - 1} edges for {verts.length} vertices</strong></div></div>
+    {last && <div className="stage-explanation"><strong>{last.e.a}—{last.e.b} (weight {last.e.w}): {last.accepted ? 'accepted' : 'skipped'}</strong><p>{last.why}</p></div>}
+    <div className="step-controls"><button className="btn btn-secondary" onClick={() => setStep(0)}><RotateCcw size={14}/> Reset</button><button className="btn btn-primary" disabled={step >= trace.length} onClick={() => setStep(x => x + 1)}>Next decision <ArrowRight size={14}/></button></div></section>
+}
+
+function ComplexityClassExplorer({ topic }: { topic: 'pnp' | 'reductions' }) {
+  const [revealed, setRevealed] = useState(false)
+  return <section className="panel"><div className="panel-heading"><div><span className="kicker">COMPUTATIONAL COMPLEXITY</span><h2>{topic === 'pnp' ? 'Solving vs verifying' : 'Reduction direction matters'}</h2><p>{topic === 'pnp' ? 'Complexity classes describe resources needed by decision problems.' : 'A reduction transforms instances while preserving yes/no answers.'}</p></div><span className="panel-icon"><BrainCircuit size={19}/></span></div>{topic === 'pnp' ? <div className="class-cards"><div><span>P</span><strong>Polynomial-time solvable</strong><p>A deterministic algorithm decides the problem in polynomial time.</p><small>Example: shortest path decision with standard assumptions.</small></div><div><span>NP</span><strong>Polynomial-time verifiable</strong><p>For a yes-instance, a certificate can be checked in polynomial time.</p><small>Every problem in P is also in NP.</small></div><div><span>NP-complete</span><strong>In NP and NP-hard</strong><p>Every problem in NP reduces to it in polynomial time.</p><small>Whether P = NP remains open.</small></div></div> : <div className="reduction-flow"><div className="reduction-node">Problem A</div><ArrowRight size={23}/><div className="reduction-node reduction-highlight">Problem B</div><p>If A ≤p B and A is NP-hard, then B is NP-hard: a fast solver for B would give a fast solver for A after transformation.</p></div>}<button className="btn btn-secondary" onClick={() => setRevealed(v => !v)}>{revealed ? 'Hide reasoning check' : 'Test your understanding'} <ArrowRight size={14}/></button>{revealed && <div className="callout"><CircleHelp size={16}/><p>{topic === 'pnp' ? 'If a problem has a polynomial-time verifier, that establishes membership in NP; it does not by itself establish that the problem is NP-complete.' : 'To prove B is NP-hard, reduce a known hard problem A to B (A ≤p B), not the other way around.'}</p></div>}</section>
+}
+
+function SATExplorer() {
+  const [a, setA] = useState(true)
+  const [b, setB] = useState(false)
+  const [c, setC] = useState(true)
+  const clauses = [a || !b, !a || c, b || c]
+  const valid = clauses.every(Boolean)
+  return <section className="panel"><div className="panel-heading"><div><span className="kicker">CERTIFICATE CHECKER</span><h2>Evaluate a small SAT formula</h2><p>Formula: (A ∨ ¬B) ∧ (¬A ∨ C) ∧ (B ∨ C)</p></div><span className="panel-icon"><Check size={19}/></span></div><div className="variable-controls">{[['A', a, setA], ['B', b, setB], ['C', c, setC]].map(([name, value, setter]) => <button key={String(name)} className={`variable-card ${value ? 'var-true' : ''}`} onClick={() => (setter as (v: boolean) => void)(!value)}><small>VARIABLE {String(name)}</small><strong>{value ? 'TRUE' : 'FALSE'}</strong><span>Click to toggle</span></button>)}</div><div className="clause-list">{clauses.map((ok, i) => <div key={i}><span>Clause {i + 1}</span><code>{['A ∨ ¬B', '¬A ∨ C', 'B ∨ C'][i]}</code><strong className={ok ? 'clause-pass' : 'clause-fail'}>{ok ? 'SATISFIED' : 'FALSE'}</strong></div>)}</div><div className={`sat-result ${valid ? 'sat-yes' : 'sat-no'}`}><strong>{valid ? 'Satisfying assignment' : 'Not satisfying'}</strong><span>{valid ? 'All clauses evaluate to true for this assignment.' : 'At least one clause is false. Change a variable and re-check.'}</span></div><div className="callout"><CircleHelp size={16}/><p>Checking one assignment is polynomial-time. SAT asks whether any satisfying assignment exists; exhaustive search over all assignments is exponential in the number of variables.</p></div></section>
+}
+
+function TSPExplorer() {
+  const cities = ['A', 'B', 'C', 'D']
+  const matrix = [[0, 10, 15, 20], [10, 0, 35, 25], [15, 35, 0, 30], [20, 25, 30, 0]]
+  const tours = [[0,1,2,3,0], [0,1,3,2,0], [0,2,1,3,0], [0,2,3,1,0], [0,3,1,2,0], [0,3,2,1,0]]
+  const costs = tours.map(t => ({ t, cost: t.slice(1).reduce((s, v, i) => s + matrix[t[i]][v], 0) })).sort((a, b) => a.cost - b.cost)
+  const best = costs[0]
+  return <section className="panel"><div className="panel-heading"><div><span className="kicker">TOUR SEARCH</span><h2>Compare candidate TSP tours</h2><p>For four cities, enumerate tours and compare total cost. The search grows rapidly with more cities.</p></div><span className="panel-icon"><Waypoints size={19}/></span></div><div className="item-table"><div className="item-row item-header"><span>Tour</span><span>Route</span><span>Total cost</span><span>Status</span></div>{costs.map((x, i) => <div className={`item-row ${i === 0 ? 'selected-edge' : ''}`} key={x.t.join('-')}><span>#{i + 1}</span><span>{x.t.map(v => cities[v]).join(' → ')}</span><span>{x.cost}</span><span>{i === 0 ? 'Best found' : 'Candidate'}</span></div>)}</div><div className="graph-state-grid"><div><small>BEST TOUR</small><strong>{best.t.map(v => cities[v]).join(' → ')}</strong></div><div><small>TOUR COST</small><strong>{best.cost}</strong></div><div><small>TOURS CHECKED</small><strong>{tours.length}</strong></div></div><div className="callout"><CircleHelp size={16}/><p>For n cities, fixing the starting city still leaves (n−1)! possible directed visit orders before symmetry reductions. Branch and bound prunes a partial route only when its valid lower bound cannot beat the best complete tour.</p></div></section>
+}
+
+export default App
