@@ -6,9 +6,9 @@ import { AlertTriangle, BookOpenCheck, GraduationCap, ListChecks, PenLine, Sigma
  *  complexity analysis of algorithms, basic introduction to algorithmic paradigms like
  *  divide and conquer, greedy, backtracking, branch and bound." */
 
-type Note = { syllabus: string; intro: string; cards: { icon: 'def' | 'key' | 'math' | 'example' | 'mistake' | 'exam'; title: string; body: ReactNode; wide?: boolean }[] }
+export type Note = { syllabus: string; intro: string; cards: { icon: 'def' | 'key' | 'math' | 'example' | 'mistake' | 'exam'; title: string; body: ReactNode; wide?: boolean }[] }
 
-const Code = ({ children }: { children: string }) => <pre className="u1-pre">{children}</pre>
+export const Code = ({ children }: { children: string }) => <pre className="u1-pre">{children}</pre>
 
 const notes: Record<string, Note> = {
   ram: {
@@ -47,13 +47,36 @@ const notes: Record<string, Note> = {
 4  return −1                    1      1`}</Code>
         <div><p><b>Worst case</b> (key absent): T(n) = (n + 1) + n + 1 = <b>2n + 2</b>, so Θ(n).</p><p><b>Best case</b> (key at A[1]): one loop test, one comparison and one return: T = <b>3</b>, so Θ(1).</p><p>The same algorithm has two different cost functions. That is why “the complexity of linear search” must always say which case.</p></div>
       </div> },
+      { icon: 'mistake', title: 'Why use a model, and its limits', body: <ul>
+        <li>Counts are <b>machine-independent</b>: a real computer runs each primitive in at most some constant time, so real time ≈ constant × RAM count.</li>
+        <li><b>Uniform cost</b> (each operation costs 1) is valid while numbers fit in a word. For huge numbers, the <b>logarithmic cost</b> criterion charges by the number of bits instead.</li>
+        <li>The model ignores caches, virtual memory and parallel hardware. Two Θ(n) programs can still differ in real speed.</li>
+      </ul> },
+      { icon: 'exam', title: 'Exam checklist', body: <ul>
+        <li>State the assumptions: one processor, unit-cost primitives, constant-time memory access.</li>
+        <li>Define the input size before counting anything.</li>
+        <li>Count executions of each line, not the number of lines.</li>
+        <li>Say which case you are analysing: best, worst or average.</li>
+      </ul> },
     ],
   },
   asymptotic: {
     syllabus: 'Asymptotic notations and their significance',
     intro: 'Exact operation counts like 3n² + 8n + 12 depend on the cost model and on small details of the code. What survives across machines and implementations is how fast the count grows as n becomes large. Asymptotic notation is the precise language for that growth.',
     cards: [
-      
+      { icon: 'def', title: 'Formal definitions', wide: true, body: <div className="u1-defs">
+        <div><b>O(g(n))</b><span>= {'{'} f(n) : there exist c &gt; 0 and n₀ such that 0 ≤ f(n) ≤ c·g(n) for all n ≥ n₀ {'}'}</span><small>Asymptotic upper bound: f grows no faster than g.</small></div>
+        <div><b>Ω(g(n))</b><span>= {'{'} f(n) : there exist c &gt; 0 and n₀ such that 0 ≤ c·g(n) ≤ f(n) for all n ≥ n₀ {'}'}</span><small>Asymptotic lower bound: f grows at least as fast as g.</small></div>
+        <div><b>Θ(g(n))</b><span>= {'{'} f(n) : there exist c₁, c₂ &gt; 0 and n₀ such that c₁·g(n) ≤ f(n) ≤ c₂·g(n) for all n ≥ n₀ {'}'}</span><small>Tight bound: f and g grow at the same rate.</small></div>
+        <div><b>o(g(n))</b><span>for <i>every</i> c &gt; 0 there is an n₀ with 0 ≤ f(n) &lt; c·g(n) for all n ≥ n₀</span><small>Strictly slower growth, e.g. n = o(n²), but n² ≠ o(n²).</small></div>
+        <div><b>ω(g(n))</b><span>for <i>every</i> c &gt; 0 there is an n₀ with 0 ≤ c·g(n) &lt; f(n) for all n ≥ n₀</span><small>Strictly faster growth, e.g. n² = ω(n).</small></div>
+      </div> },
+      { icon: 'key', title: 'Significance: why we use them', body: <ul>
+        <li>They <b>ignore constant factors</b>, which depend on the machine and compiler, and <b>lower-order terms</b>, which vanish for large n.</li>
+        <li>They <b>classify</b> algorithms into families such as linear, n log n and quadratic.</li>
+        <li>They predict <b>scaling</b>: doubling n doubles a Θ(n) cost and quadruples a Θ(n²) cost.</li>
+        <li>A 100n algorithm beats an n² algorithm for every n &gt; 100, even though it looks worse for tiny inputs.</li>
+      </ul> },
       { icon: 'math', title: 'Limit test and properties', body: <>
         <div className="u1-formula">L = lim<sub>n→∞</sub> f(n) / g(n)</div>
         <ul>
@@ -80,6 +103,12 @@ const notes: Record<string, Note> = {
           <p>Check at n = 9: f(9) = 327 &gt; 4 · 81 = 324, so n₀ = 10 really is the smallest valid choice for c₂ = 4. The “Prove a bound” lab below computes exactly this.</p>
         </div>
       </div> },
+      { icon: 'mistake', title: 'Common mistakes', body: <ul>
+        <li>“Big-O means worst case.” No: O, Ω and Θ bound <i>functions</i>, and best and worst case are different functions.</li>
+        <li>f = O(g) is set membership, not an equation: n = O(n²) does not mean n² = O(n).</li>
+        <li>n² = O(n³) is true but not tight. Prefer Θ when you can prove it.</li>
+        <li>2²ⁿ = 4ⁿ is <b>not</b> O(2ⁿ).</li>
+      </ul> },
     ],
   },
   complexity: {
@@ -99,6 +128,14 @@ const notes: Record<string, Note> = {
         <li>Dependent inner loop (j ≤ i): <b>sum</b> it, Σ i = n(n+1)/2 = Θ(n²).</li>
         <li>A loop variable multiplied or divided by a constant each time: <b>Θ(log n)</b> iterations.</li>
         <li>if / else: take the more expensive branch for the worst case.</li>
+      </ul> },
+      { icon: 'math', title: 'Sums you will need', body: <ul className="u1-mono-list">
+        <li>Σ<sub>i=1..n</sub> 1 = n</li>
+        <li>Σ<sub>i=1..n</sub> i = n(n+1)/2 = Θ(n²)</li>
+        <li>Σ<sub>i=1..n</sub> i² = n(n+1)(2n+1)/6 = Θ(n³)</li>
+        <li>Σ<sub>i=0..k</sub> rⁱ = (rᵏ⁺¹ − 1)/(r − 1), so Θ(rᵏ) for r &gt; 1</li>
+        <li>Σ<sub>i=1..n</sub> 1/i ≈ ln n = Θ(log n)</li>
+        <li>Σ<sub>i=1..n</sub> log i = log n! = Θ(n log n)</li>
       </ul> },
       { icon: 'def', title: 'Solving recurrences', wide: true, body: <div className="u1-two-col">
         <div>
@@ -123,6 +160,11 @@ const notes: Record<string, Note> = {
         <li>Merge sort: Θ(n) for the merge buffer plus Θ(log n) of stack.</li>
         <li>Binary search: Θ(log n) when recursive, Θ(1) when iterative.</li>
         <li>An algorithm that runs in place uses Θ(1) extra space.</li>
+      </ul> },
+      { icon: 'mistake', title: 'Common mistakes', body: <ul>
+        <li>Assuming two nested loops always give n². If the inner loop halves, it is n log n; if it runs a constant number of times, it is n.</li>
+        <li>Applying the Master theorem to T(n − 1) recurrences or to non-polynomial gaps such as 2T(n/2) + n log n.</li>
+        <li>Forgetting the recursion stack when stating space complexity.</li>
       </ul> },
     ],
   },
@@ -157,9 +199,13 @@ export function hasUnit1Theory(topic: string) { return topic in notes }
 
 export function Unit1Theory({ topic }: { topic: string }) {
   const n = notes[topic]
-  if (!n) return null
+  return n ? <NotesPanel note={n} unit="I"/> : null
+}
+
+/** Renders one topic's notes; shared by every unit. */
+export function NotesPanel({ note: n, unit }: { note: Note; unit: string }) {
   return <section className="panel u1-notes">
-    <div className="u1-syllabus"><span>SYLLABUS · UNIT I</span>{n.syllabus}</div>
+    <div className="u1-syllabus"><span>SYLLABUS · UNIT {unit}</span>{n.syllabus}</div>
     <p className="u1-notes-intro">{n.intro}</p>
     <div className="u1-notes-grid">{n.cards.map(c => { const I = icons[c.icon]; return <article key={c.title} className={`u1-note ${c.wide ? 'wide' : ''} k-${c.icon}`}>
       <h4><I size={15}/>{c.title}</h4>

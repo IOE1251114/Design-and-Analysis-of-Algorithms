@@ -16,12 +16,23 @@ Open the local URL printed by Vite (normally `http://localhost:5173`). To make a
 ```bash
 npm run build
 npm run preview
+npm test        # checks every Unit 1 trace against its closed-form formula
 ```
 
 ## Coverage
 
-- **Unit I — Algorithm analysis:** RAM model, asymptotic bounds, operation-count patterns, divide and conquer, greedy, backtracking, branch and bound.
-- **Unit II — Searching, sorting and data structures:** bubble/selection/insertion/merge sort trace; BST and balanced-tree concepts; hash buckets and collisions; KMP prefix table and Boyer–Moore shift concept.
+- **Unit I — Algorithm analysis (fully visual):**
+  - *RAM model:* line-by-line tracer for three programs (Θ(1), Θ(n), Θ(n²)) with per-line cost, run counts, memory/registers, a running cost meter, a T(n) chart and a "when n doubles" ratio panel.
+  - *Asymptotic notation:* growth-rate race (1, log n, n, n log n, n², 2ⁿ) on linear or log scale; a bound prover that computes the exact smallest n₀ for O, Ω and Θ from your own f(n), g(n), c₁ and c₂.
+  - *Complexity analysis:* loop grids where each square is one execution (constant, log, linear, n log n, triangular, quadratic), T(n) and T(n)/g(n) charts; recursion trees with per-level work bars and the Master Theorem case.
+  - *Paradigms:* merge sort split/merge tree, greedy coin change vs optimal (with a failing coin system), N-Queens backtracking, and 0/1-knapsack branch and bound with pruning.
+- **Unit II — Searching, sorting and data structures (fully visual):**
+  - *Comparison sorting:* quick (last or middle pivot), merge, heap and insertion sort, step by step, plus a worst- vs average-case chart built from real comparison counts.
+  - *Linear-time sorting:* counting sort (stability shown), LSD radix sort, bucket sort, and the decision-tree proof of the Ω(n log n) lower bound.
+  - *Search trees:* BST insert/search/delete, AVL rotations (LL/RR/LR/RL), red-black insertion fix-up, B-tree insertion with node splits (t = 2 or 3), and a tree-height comparison.
+  - *Heaps:* max/min binary heap with insert, extract and build-heap shown as both a tree and an array, and why build-heap is Θ(n).
+  - *Hashing:* chaining, linear, quadratic and double hashing with probe sequences, load factor and expected-cost curves.
+  - *String matching:* naive, KMP (with prefix-function construction) and Boyer–Moore (bad-character and good-suffix tables).
 - **Unit III — Graph algorithms:** adjacency-list/matrix/edge-list comparison, BFS/DFS traversal, topological-order concept, shortest-path relaxation and complexity notes.
 - **Unit IV — Greedy and dynamic programming:** MST edge-selection concept, fractional knapsack and greedy proof caveat, 0/1 knapsack DP table.
 - **Unit V — Complexity and intractability:** P/NP/NP-complete concepts, polynomial reductions, SAT assignment checker, small TSP tour enumeration.
@@ -29,7 +40,7 @@ npm run preview
 ## Modes
 
 - **Explore:** interactive visualizers, input controls, intermediate states and concept notes. While a student is signed in, time spent and steps taken per topic are recorded automatically.
-- **Student (manual practice):** enter a name, see your mastery per topic, practice auto-graded problems (24 problems covering all 19 topics), use hints, and open the matching visualizer. Teacher assignments appear here.
+- **Student (manual practice):** enter a name, see your mastery per topic, practice auto-graded problems (34 problems covering all 21 topics), use hints, and open the matching visualizer. Teacher assignments appear here.
 - **Teacher (automated):** no grading or data entry. The dashboard derives class accuracy, weakest topics, most common misconceptions, students needing attention, a student × topic heatmap, per-student drill-down (time, steps, misconceptions), and one-click auto-assignment of the weakest topics. Export CSV/JSON.
 
 ## How tracking works
@@ -37,6 +48,7 @@ npm run preview
 - `src/domain/problems.ts`: problem bank. Each wrong answer maps to a named misconception.
 - `src/domain/tracking.ts`: data model, localStorage persistence (`useDB`), analytics, and `useActivityTracker`.
 - Mastery = share of the last 6 attempts answered correctly (a correct answer after a hint counts half), shown only after 2+ attempts. Below 50% = struggling, below 75% = developing.
+- `src/domain/unit1.ts` and `src/domain/unit2/*.ts`: pure, deterministic logic behind every Unit 1 and Unit 2 visual (seeded, no randomness); the `*.test.ts` files verify it against textbook results.
 - `src/domain/demo.ts`: "Load demo class" in Teacher mode creates 8 synthetic students (flagged demo, removable).
 - A student tab and a teacher tab in the same browser stay in sync through the `storage` event.
 
@@ -45,7 +57,7 @@ npm run preview
 - Data is stored in the browser's `localStorage`: no sync across devices, accounts or real classes. `loadDB`/`saveDB`/`useDB` are the only storage touchpoints, so adding a backend means replacing them with API calls.
 - Student identity is a typed name, not authentication.
 - Auto-grading covers multiple-choice and numeric problems only. The old keyword-based writing checklist is no longer used.
-- Visualizer step counts are tracked for the sorting and BFS/DFS steppers; other visualizers record time only.
+- Visualizer step counts are tracked for the sorting and BFS/DFS steppers and all Unit 1 steppers; other visualizers record time only.
 - Some panels are still concept demonstrators (tree panel, Boyer–Moore, shortest-path rounds use fixed illustrative values).
 
 ## Next milestones
