@@ -33,14 +33,20 @@ npm test        # checks every Unit 1 trace against its closed-form formula
   - *Heaps:* max/min binary heap with insert, extract and build-heap shown as both a tree and an array, and why build-heap is Θ(n).
   - *Hashing:* chaining, linear, quadratic and double hashing with probe sequences, load factor and expected-cost curves.
   - *String matching:* naive, KMP (with prefix-function construction) and Boyer–Moore (bad-character and good-suffix tables).
-- **Unit III — Graph algorithms:** adjacency-list/matrix/edge-list comparison, BFS/DFS traversal, topological-order concept, shortest-path relaxation and complexity notes.
-- **Unit IV — Greedy and dynamic programming:** MST edge-selection concept, fractional knapsack and greedy proof caveat, 0/1 knapsack DP table.
-- **Unit V — Complexity and intractability:** P/NP/NP-complete concepts, polynomial reductions, SAT assignment checker, small TSP tour enumeration.
+- **Unit III — Graph algorithms (fully visual):**
+  - *Representations:* an editable graph shown as adjacency matrix, adjacency list and edge list, with space and operation costs.
+  - *BFS & DFS:* queue/stack state, BFS layers, DFS discovery/finish intervals and edge classes (tree, back, forward, cross).
+  - *Connected components:* component labelling, and Kosaraju's strongly connected components with the condensation DAG.
+  - *Topological sorting:* Kahn's in-degree method and DFS finishing order, with cycle detection.
+  - *Biconnected components:* low-link DFS finding articulation points, bridges and biconnected components, plus a remove-a-vertex experiment.
+  - *Single-source shortest paths:* Dijkstra (and where it fails), Bellman–Ford with negative-cycle detection, and DAG shortest paths.
+- **Unit IV — Greedy and dynamic programming:** Prim and Kruskal on the textbook 9-vertex graph (union-find sets, keys and the cut property); Dijkstra with an array vs a binary heap (live operation counts and a worst-case bound chart); fractional knapsack with three greedy rules; Huffman coding with the priority-queue forest, code table and bits vs entropy; binomial coefficient (Pascal table, recursion tree with repeats, calls vs cells chart); matrix-chain m and s tables with every bracketing charted; LCS table with arrows and trace-back; 0/1 knapsack table with trace-back compared with greedy and fractional answers. Each topic has syllabus-referenced theory notes.
+- **Unit V — Complexity and intractability:** subset-sum search vs certificate check, growth chart and a clickable map of P / NP / NP-complete / NP-hard; NP-completeness as hardness spreading through the reduction tree (and a fast algorithm spreading up to P = NP), with the proof recipe; CNF-SAT ≤p INDEPENDENT-SET built step by step, plus the independent set / vertex cover / clique triangle; SAT with certificate checking, a full truth table and a DPLL search tree on your own formulas; Hamiltonian-cycle backtracking with the Euler contrast and HAM-CYCLE ≤p TSP; TSP brute force vs nearest neighbour vs the MST 2-approximation. Each topic has syllabus-referenced theory notes.
 
 ## Modes
 
 - **Explore:** interactive visualizers, input controls, intermediate states and concept notes. While a student is signed in, time spent and steps taken per topic are recorded automatically.
-- **Student (manual practice):** enter a name, see your mastery per topic, practice auto-graded problems (34 problems covering all 21 topics), use hints, and open the matching visualizer. Teacher assignments appear here.
+- **Student (manual practice):** enter a name, see your mastery per topic, practice auto-graded problems (60 problems covering all 30 topics), use hints, and open the matching visualizer. Teacher assignments appear here.
 - **Teacher (automated):** no grading or data entry. The dashboard derives class accuracy, weakest topics, most common misconceptions, students needing attention, a student × topic heatmap, per-student drill-down (time, steps, misconceptions), and one-click auto-assignment of the weakest topics. Export CSV/JSON.
 
 ## How tracking works
@@ -48,7 +54,7 @@ npm test        # checks every Unit 1 trace against its closed-form formula
 - `src/domain/problems.ts`: problem bank. Each wrong answer maps to a named misconception.
 - `src/domain/tracking.ts`: data model, localStorage persistence (`useDB`), analytics, and `useActivityTracker`.
 - Mastery = share of the last 6 attempts answered correctly (a correct answer after a hint counts half), shown only after 2+ attempts. Below 50% = struggling, below 75% = developing.
-- `src/domain/unit1.ts` and `src/domain/unit2/*.ts`: pure, deterministic logic behind every Unit 1 and Unit 2 visual (seeded, no randomness); the `*.test.ts` files verify it against textbook results.
+- `src/domain/unit1.ts`, `src/domain/unit2/*.ts` and `src/domain/unit3/*.ts`: pure, deterministic logic behind every Unit 1–3 visual (seeded, no randomness); the `*.test.ts` files verify it against textbook results.
 - `src/domain/demo.ts`: "Load demo class" in Teacher mode creates 8 synthetic students (flagged demo, removable).
 - A student tab and a teacher tab in the same browser stay in sync through the `storage` event.
 
