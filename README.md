@@ -1,4 +1,4 @@
-# DAA Lab — Algorithm Studio
+# VATRIX - Visual Algorithm Space
 
 An interactive React + TypeScript + Vite learning prototype for a five-unit Design and Analysis of Algorithms course. It includes a responsive dark UI, a topic navigator, an Explore workspace, a Student assignment view, and a Teacher authoring/review view.
 

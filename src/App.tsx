@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import myLogo from "./Image.png";
+import myLogo from './Image.png';
 import {
   Activity,
   ArrowDown,
