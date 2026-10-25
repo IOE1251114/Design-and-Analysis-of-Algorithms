@@ -1,48 +1,311 @@
 /* Unit 3 graph visualizers — reuses the Unit 1 and Unit 2 building blocks */
-.u3-canvas{border:1px solid #283a50;background:radial-gradient(ellipse at center,#102033,#0b1420 72%);border-radius:10px;padding:8px;min-width:0}
-.u3-graph text{font-family:'DM Mono',monospace}
-.u3-stage{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:12px;margin-top:10px;align-items:start}
-.u3-ds{display:flex;flex-direction:column;gap:10px;min-width:0}
-.u3-ds>div{border:1px solid #29394d;background:#0b1420;border-radius:9px;padding:10px 12px}
-.u3-ds small{display:block;font:8px 'DM Mono',monospace;letter-spacing:.6px;color:#7890a8;margin-bottom:8px;line-height:1.5}
-.u3-ds>div>div{display:flex;flex-wrap:wrap;gap:5px}
-.u3-ds span{font:11px 'DM Mono',monospace;color:#e2f2ff;background:#142234;border:1px solid #2a3d51;border-radius:5px;padding:4px 7px}
-.u3-ds span.first{border-color:#f4c56a;background:#2a2412}
-.u3-ds span.out{border-color:#2d6552;background:#10302a;color:#b6ffe0}
-.u3-ds em{font-size:10px;color:#5d738b;font-style:normal}
-.u3-layers{margin-top:14px;border:1px solid #29394d;background:#0b1420;border-radius:10px;padding:12px 14px}
-.u3-layers .u1-label{margin-top:0}
-.u3-layers>div:not(.u1-tree-scroll){display:flex;flex-wrap:wrap;gap:8px}
-.u3-layers>div>div{display:flex;align-items:center;flex-wrap:wrap;gap:5px;border:1px solid #233246;border-radius:8px;padding:7px 9px}
-.u3-layers>div>div small{font:9px 'DM Mono',monospace;color:#84dfff;margin-right:4px}
-.u3-layers>div>div span{font:11px 'DM Mono',monospace;color:#7890a8;border:1px dashed #2a3d51;border-radius:5px;padding:3px 7px}
-.u3-layers>div>div span.on{color:#e2f2ff;border-style:solid;border-color:#1aab80;background:#10302a}
-.u3-layers .u1-tree-scroll{margin-top:0;padding:6px}
-.u3-groups{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 4px}
-.u3-groups>div{display:flex;align-items:center;flex-wrap:wrap;gap:5px;border:1.5px solid;border-radius:8px;padding:6px 8px 6px 6px;background:#0b1420}
-.u3-groups b{font:600 9px 'DM Mono',monospace;color:#06121b;border-radius:4px;padding:3px 6px}
-.u3-groups span{font:11px 'DM Mono',monospace;color:#e2f2ff}
+.u3-canvas {
+  border: 1px solid #283a50;
+  background: radial-gradient(ellipse at center, #102033, #0b1420 72%);
+  border-radius: 10px;
+  padding: 8px;
+  min-width: 0;
+}
+.u3-graph text {
+  font-family: "DM Mono", monospace;
+}
+.u3-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 12px;
+  margin-top: 10px;
+  align-items: start;
+}
+.u3-ds {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.u3-ds > div {
+  border: 1px solid #29394d;
+  background: #0b1420;
+  border-radius: 9px;
+  padding: 10px 12px;
+}
+.u3-ds small {
+  display: block;
+  font:
+    8px "DM Mono",
+    monospace;
+  letter-spacing: 0.6px;
+  color: #7890a8;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+.u3-ds > div > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.u3-ds span {
+  font:
+    11px "DM Mono",
+    monospace;
+  color: #e2f2ff;
+  background: #142234;
+  border: 1px solid #2a3d51;
+  border-radius: 5px;
+  padding: 4px 7px;
+}
+.u3-ds span.first {
+  border-color: #f4c56a;
+  background: #2a2412;
+}
+.u3-ds span.out {
+  border-color: #2d6552;
+  background: #10302a;
+  color: #b6ffe0;
+}
+.u3-ds em {
+  font-size: 10px;
+  color: #5d738b;
+  font-style: normal;
+}
+.u3-layers {
+  margin-top: 14px;
+  border: 1px solid #29394d;
+  background: #0b1420;
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.u3-layers .u1-label {
+  margin-top: 0;
+}
+.u3-layers > div:not(.u1-tree-scroll) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.u3-layers > div > div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  border: 1px solid #233246;
+  border-radius: 8px;
+  padding: 7px 9px;
+}
+.u3-layers > div > div small {
+  font:
+    9px "DM Mono",
+    monospace;
+  color: #84dfff;
+  margin-right: 4px;
+}
+.u3-layers > div > div span {
+  font:
+    11px "DM Mono",
+    monospace;
+  color: #7890a8;
+  border: 1px dashed #2a3d51;
+  border-radius: 5px;
+  padding: 3px 7px;
+}
+.u3-layers > div > div span.on {
+  color: #e2f2ff;
+  border-style: solid;
+  border-color: #1aab80;
+  background: #10302a;
+}
+.u3-layers .u1-tree-scroll {
+  margin-top: 0;
+  padding: 6px;
+}
+.u3-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 4px;
+}
+.u3-groups > div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  border: 1.5px solid;
+  border-radius: 8px;
+  padding: 6px 8px 6px 6px;
+  background: #0b1420;
+}
+.u3-groups b {
+  font:
+    600 9px "DM Mono",
+    monospace;
+  color: #06121b;
+  border-radius: 4px;
+  padding: 3px 6px;
+}
+.u3-groups span {
+  font:
+    11px "DM Mono",
+    monospace;
+  color: #e2f2ff;
+}
 /* representations */
-.u3-rep{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px;margin-top:10px;align-items:start}
-.u3-matrix{border-collapse:separate;border-spacing:3px;font:11px 'DM Mono',monospace;color:#8fa3b9}
-.u3-matrix th{font-weight:400;padding:2px 6px;color:#84dfff}.u3-matrix th.on{color:#fff3d6;background:#4a3b17;border-radius:4px}
-.u3-matrix td{padding:0}
-.u3-matrix button{width:36px;height:32px;border:1px solid #2a3d51;background:#0f1b29;border-radius:5px;color:#5d738b;font:12px 'DM Mono',monospace}
-.u3-matrix td.one button{background:#10302a;border-color:#1aab80;color:#b6ffe0}
-.u3-matrix td.hl button{outline:1.5px solid #f4c56a;outline-offset:-1px}
-.u3-matrix td.diag button{background:transparent;border-style:dashed}
-.u3-matrix button:not(:disabled):hover{border-color:#67d9ff}
-.u3-rep2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px}
-.u3-adjlist{display:flex;flex-direction:column;gap:4px}
-.u3-adjlist>div{display:flex;align-items:center;gap:6px;border:1px solid #233246;border-radius:7px;padding:5px 8px;font:11px 'DM Mono',monospace;color:#9fb2c6}
-.u3-adjlist>div.on{border-color:#f4c56a;background:#2a2412}
-.u3-adjlist b{color:#84dfff;font-weight:400;min-width:14px}.u3-adjlist i{font-style:normal;color:#e2f2ff;background:#142234;border:1px solid #2a3d51;border-radius:4px;padding:2px 7px}
-.u3-adjlist em{color:#5d738b;font-style:normal}
-.u3-edgelist{display:flex;flex-wrap:wrap;gap:5px}.u3-edgelist span{font:11px 'DM Mono',monospace;color:#c9dcef;background:#142234;border:1px solid #2a3d51;border-radius:5px;padding:4px 7px}
-.u3-edgelist span.on{border-color:#f4c56a;background:#2a2412}.u3-edgelist em{font-size:10px;color:#5d738b;font-style:normal}
-.u3-wrong td{background:#2a1520;color:#ffc2cb}
-@media(max-width:1100px){.u3-stage{grid-template-columns:1fr}.u3-ds{flex-direction:row;flex-wrap:wrap}.u3-ds>div{flex:1;min-width:200px}}
-@media(max-width:900px){.u3-rep,.u3-rep2{grid-template-columns:1fr}}
-@media(max-width:620px){.u3-matrix button{width:30px;height:28px}}
+.u3-rep {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 14px;
+  margin-top: 10px;
+  align-items: start;
+}
+.u3-matrix {
+  border-collapse: separate;
+  border-spacing: 3px;
+  font:
+    11px "DM Mono",
+    monospace;
+  color: #8fa3b9;
+}
+.u3-matrix th {
+  font-weight: 400;
+  padding: 2px 6px;
+  color: #84dfff;
+}
+.u3-matrix th.on {
+  color: #fff3d6;
+  background: #4a3b17;
+  border-radius: 4px;
+}
+.u3-matrix td {
+  padding: 0;
+}
+.u3-matrix button {
+  width: 36px;
+  height: 32px;
+  border: 1px solid #2a3d51;
+  background: #0f1b29;
+  border-radius: 5px;
+  color: #5d738b;
+  font:
+    12px "DM Mono",
+    monospace;
+}
+.u3-matrix td.one button {
+  background: #10302a;
+  border-color: #1aab80;
+  color: #b6ffe0;
+}
+.u3-matrix td.hl button {
+  outline: 1.5px solid #f4c56a;
+  outline-offset: -1px;
+}
+.u3-matrix td.diag button {
+  background: transparent;
+  border-style: dashed;
+}
+.u3-matrix button:not(:disabled):hover {
+  border-color: #67d9ff;
+}
+.u3-rep2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 6px;
+}
+.u3-adjlist {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.u3-adjlist > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #233246;
+  border-radius: 7px;
+  padding: 5px 8px;
+  font:
+    11px "DM Mono",
+    monospace;
+  color: #9fb2c6;
+}
+.u3-adjlist > div.on {
+  border-color: #f4c56a;
+  background: #2a2412;
+}
+.u3-adjlist b {
+  color: #84dfff;
+  font-weight: 400;
+  min-width: 14px;
+}
+.u3-adjlist i {
+  font-style: normal;
+  color: #e2f2ff;
+  background: #142234;
+  border: 1px solid #2a3d51;
+  border-radius: 4px;
+  padding: 2px 7px;
+}
+.u3-adjlist em {
+  color: #5d738b;
+  font-style: normal;
+}
+.u3-edgelist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.u3-edgelist span {
+  font:
+    11px "DM Mono",
+    monospace;
+  color: #c9dcef;
+  background: #142234;
+  border: 1px solid #2a3d51;
+  border-radius: 5px;
+  padding: 4px 7px;
+}
+.u3-edgelist span.on {
+  border-color: #f4c56a;
+  background: #2a2412;
+}
+.u3-edgelist em {
+  font-size: 10px;
+  color: #5d738b;
+  font-style: normal;
+}
+.u3-wrong td {
+  background: #2a1520;
+  color: #ffc2cb;
+}
+@media (max-width: 1100px) {
+  .u3-stage {
+    grid-template-columns: 1fr;
+  }
+  .u3-ds {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .u3-ds > div {
+    flex: 1;
+    min-width: 200px;
+  }
+}
+@media (max-width: 900px) {
+  .u3-rep,
+  .u3-rep2 {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 620px) {
+  .u3-matrix button {
+    width: 30px;
+    height: 28px;
+  }
+}
 /* keep vertex labels readable on phones: the drawing scrolls sideways inside its own box */
-@media(max-width:620px){.u3-canvas{overflow-x:auto}.u3-graph{min-width:540px}}
+@media (max-width: 620px) {
+  .u3-canvas {
+    overflow-x: auto;
+  }
+  .u3-graph {
+    min-width: 540px;
+  }
+}

@@ -22,24 +22,24 @@ npm test        # checks every Unit 1 trace against its closed-form formula
 ## Coverage
 
 - **Unit I — Algorithm analysis (fully visual):**
-  - *RAM model:* line-by-line tracer for three programs (Θ(1), Θ(n), Θ(n²)) with per-line cost, run counts, memory/registers, a running cost meter, a T(n) chart and a "when n doubles" ratio panel.
-  - *Asymptotic notation:* growth-rate race (1, log n, n, n log n, n², 2ⁿ) on linear or log scale; a bound prover that computes the exact smallest n₀ for O, Ω and Θ from your own f(n), g(n), c₁ and c₂.
-  - *Complexity analysis:* loop grids where each square is one execution (constant, log, linear, n log n, triangular, quadratic), T(n) and T(n)/g(n) charts; recursion trees with per-level work bars and the Master Theorem case.
-  - *Paradigms:* merge sort split/merge tree, greedy coin change vs optimal (with a failing coin system), N-Queens backtracking, and 0/1-knapsack branch and bound with pruning.
+  - _RAM model:_ line-by-line tracer for three programs (Θ(1), Θ(n), Θ(n²)) with per-line cost, run counts, memory/registers, a running cost meter, a T(n) chart and a "when n doubles" ratio panel.
+  - _Asymptotic notation:_ growth-rate race (1, log n, n, n log n, n², 2ⁿ) on linear or log scale; a bound prover that computes the exact smallest n₀ for O, Ω and Θ from your own f(n), g(n), c₁ and c₂.
+  - _Complexity analysis:_ loop grids where each square is one execution (constant, log, linear, n log n, triangular, quadratic), T(n) and T(n)/g(n) charts; recursion trees with per-level work bars and the Master Theorem case.
+  - _Paradigms:_ merge sort split/merge tree, greedy coin change vs optimal (with a failing coin system), N-Queens backtracking, and 0/1-knapsack branch and bound with pruning.
 - **Unit II — Searching, sorting and data structures (fully visual):**
-  - *Comparison sorting:* quick (last or middle pivot), merge, heap and insertion sort, step by step, plus a worst- vs average-case chart built from real comparison counts.
-  - *Linear-time sorting:* counting sort (stability shown), LSD radix sort, bucket sort, and the decision-tree proof of the Ω(n log n) lower bound.
-  - *Search trees:* BST insert/search/delete, AVL rotations (LL/RR/LR/RL), red-black insertion fix-up, B-tree insertion with node splits (t = 2 or 3), and a tree-height comparison.
-  - *Heaps:* max/min binary heap with insert, extract and build-heap shown as both a tree and an array, and why build-heap is Θ(n).
-  - *Hashing:* chaining, linear, quadratic and double hashing with probe sequences, load factor and expected-cost curves.
-  - *String matching:* naive, KMP (with prefix-function construction) and Boyer–Moore (bad-character and good-suffix tables).
+  - _Comparison sorting:_ quick (last or middle pivot), merge, heap and insertion sort, step by step, plus a worst- vs average-case chart built from real comparison counts.
+  - _Linear-time sorting:_ counting sort (stability shown), LSD radix sort, bucket sort, and the decision-tree proof of the Ω(n log n) lower bound.
+  - _Search trees:_ BST insert/search/delete, AVL rotations (LL/RR/LR/RL), red-black insertion fix-up, B-tree insertion with node splits (t = 2 or 3), and a tree-height comparison.
+  - _Heaps:_ max/min binary heap with insert, extract and build-heap shown as both a tree and an array, and why build-heap is Θ(n).
+  - _Hashing:_ chaining, linear, quadratic and double hashing with probe sequences, load factor and expected-cost curves.
+  - _String matching:_ naive, KMP (with prefix-function construction) and Boyer–Moore (bad-character and good-suffix tables).
 - **Unit III — Graph algorithms (fully visual):**
-  - *Representations:* an editable graph shown as adjacency matrix, adjacency list and edge list, with space and operation costs.
-  - *BFS & DFS:* queue/stack state, BFS layers, DFS discovery/finish intervals and edge classes (tree, back, forward, cross).
-  - *Connected components:* component labelling, and Kosaraju's strongly connected components with the condensation DAG.
-  - *Topological sorting:* Kahn's in-degree method and DFS finishing order, with cycle detection.
-  - *Biconnected components:* low-link DFS finding articulation points, bridges and biconnected components, plus a remove-a-vertex experiment.
-  - *Single-source shortest paths:* Dijkstra (and where it fails), Bellman–Ford with negative-cycle detection, and DAG shortest paths.
+  - _Representations:_ an editable graph shown as adjacency matrix, adjacency list and edge list, with space and operation costs.
+  - _BFS & DFS:_ queue/stack state, BFS layers, DFS discovery/finish intervals and edge classes (tree, back, forward, cross).
+  - _Connected components:_ component labelling, and Kosaraju's strongly connected components with the condensation DAG.
+  - _Topological sorting:_ Kahn's in-degree method and DFS finishing order, with cycle detection.
+  - _Biconnected components:_ low-link DFS finding articulation points, bridges and biconnected components, plus a remove-a-vertex experiment.
+  - _Single-source shortest paths:_ Dijkstra (and where it fails), Bellman–Ford with negative-cycle detection, and DAG shortest paths.
 - **Unit IV — Greedy and dynamic programming:** Prim and Kruskal on the textbook 9-vertex graph (union-find sets, keys and the cut property); Dijkstra with an array vs a binary heap (live operation counts and a worst-case bound chart); fractional knapsack with three greedy rules; Huffman coding with the priority-queue forest, code table and bits vs entropy; binomial coefficient (Pascal table, recursion tree with repeats, calls vs cells chart); matrix-chain m and s tables with every bracketing charted; LCS table with arrows and trace-back; 0/1 knapsack table with trace-back compared with greedy and fractional answers. Each topic has syllabus-referenced theory notes.
 - **Unit V — Complexity and intractability:** subset-sum search vs certificate check, growth chart and a clickable map of P / NP / NP-complete / NP-hard; NP-completeness as hardness spreading through the reduction tree (and a fast algorithm spreading up to P = NP), with the proof recipe; CNF-SAT ≤p INDEPENDENT-SET built step by step, plus the independent set / vertex cover / clique triangle; SAT with certificate checking, a full truth table and a DPLL search tree on your own formulas; Hamiltonian-cycle backtracking with the Euler contrast and HAM-CYCLE ≤p TSP; TSP brute force vs nearest neighbour vs the MST 2-approximation. Each topic has syllabus-referenced theory notes.
 
