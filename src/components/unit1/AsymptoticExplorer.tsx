@@ -16,30 +16,33 @@ function GrowthRace() {
   const [scale, setScale] = useState<'linear' | 'log'>('linear')
   const [hidden, setHidden] = useState<Set<string>>(new Set())
   const visible = growthOrder.filter(g => !hidden.has(g))
-  const data = useMemo(() => Array.from({ length: nMax - 1 }, (_, i) => { const n = i + 2; return { n, ...Object.fromEntries(growthOrder.map(g => [g, growth[g].f(n)])) } as { n: number } & Record<GrowthId, number> }), [nMax])
+  // n starts at 1. On a log axis a value of 0 (log₂ 1) cannot be drawn, so it becomes a gap there.
+  const data = useMemo(() => Array.from({ length: nMax }, (_, i) => { const n = i + 1; return { n, ...Object.fromEntries(growthOrder.map(g => { const v = growth[g].f(n); return [g, scale === 'log' && v <= 0 ? null : v] })) } as { n: number } & Record<GrowthId, number> }), [nMax, scale])
+  const xEnd = nMax, xDomain: [number, number] = nMax === 1 ? [0.5, 1.5] : [1, nMax], xTicks = nMax === 1 ? [1] : [1, ...niceTicks(nMax, 6).ticks.filter(t => Number.isInteger(t) && t > 1 && t <= nMax)]
   const capSeries = visible.filter(g => g !== 'exp')
-  const cap = scale === 'linear' ? niceTicks(capSeries.length ? Math.max(...capSeries.map(g => growth[g].f(nMax))) : growth.exp.f(nMax)).top : undefined
-  const expEscapes = scale === 'linear' && !hidden.has('exp') && cap !== undefined && growth.exp.f(nMax) > cap ? data.find(d => d.exp > cap)?.n : undefined
+  const cap = scale === 'linear' ? niceTicks(capSeries.length ? Math.max(...capSeries.map(g => growth[g].f(xEnd))) : growth.exp.f(xEnd)).top : undefined
+  const expEscapes = scale === 'linear' && !hidden.has('exp') && cap !== undefined && growth.exp.f(xEnd) > cap ? data.find(d => d.exp > cap)?.n : undefined
   const toggle = (id: string) => setHidden(h => { const s = new Set(h); s.has(id) ? s.delete(id) : s.add(id); return s.size === growthOrder.length ? h : s })
   const sorted = [...growthOrder].sort((a, b) => growth[a].f(nMax) - growth[b].f(nMax))
 
   return <section className="panel">
     <div className="panel-heading"><div><span className="kicker">GROWTH-RATE RACE</span><h2>As n grows, what dominates?</h2><p>Each curve is the function itself, computed exactly. Drag n to the right and watch the order of the curves lock in. Click a legend chip to hide a curve.</p></div><span className="panel-icon"><Activity size={19}/></span></div>
     <div className="u1-controls">
-      <div className="input-row"><label>Largest n shown <strong>{nMax}</strong></label><input type="range" min="6" max="64" value={nMax} onChange={e => setNMax(Number(e.target.value))}/></div>
+      <div className="input-row"><label>Largest n shown <strong>{nMax}</strong></label><input type="range" min="1" max="64" value={nMax} onChange={e => setNMax(Number(e.target.value))}/></div>
       <Tabs value={scale} onChange={setScale} options={[{ id: 'linear', label: 'Linear scale' }, { id: 'log', label: 'Log scale' }]}/>
     </div>
     <Legend items={growthOrder.map(g => ({ id: g, label: growth[g].label, color: growthColor[g] }))} hidden={hidden} onToggle={toggle}/>
     <div className="u1-chart" style={{ height: 320 }}><ResponsiveContainer width="100%" height="100%">
       <LineChart data={data} margin={{ top: 10, right: 16, bottom: 6, left: 0 }}>
         <CartesianGrid {...grid}/>
-        <XAxis dataKey="n" type="number" domain={[2, nMax]} ticks={[2, ...niceTicks(nMax, 6).ticks.filter(t => t > 2 && t <= nMax)]} {...axis} allowDecimals={false} label={{ value: 'n', position: 'insideBottomRight', offset: -2, fill: '#8498ae', fontSize: 10 }}/>
+        <XAxis dataKey="n" type="number" domain={xDomain} ticks={xTicks} {...axis} allowDecimals={false} label={{ value: 'n', position: 'insideBottomRight', offset: -2, fill: '#8498ae', fontSize: 10 }}/>
         <YAxis {...axis} width={52} scale={scale} domain={scale === 'log' ? [0.5, 'auto'] : [0, cap!]} allowDataOverflow tickFormatter={compact}/>
         <Tooltip {...tooltipStyle} labelFormatter={v => `n = ${v}`} formatter={(v: number, k: string) => [compact(v), growth[k as GrowthId].label]} itemSorter={it => -(it.value as number)}/>
-        {visible.map(g => <Line key={g} dataKey={g} type="monotone" stroke={growthColor[g]} strokeWidth={2} dot={false} isAnimationActive={false}/>)}
+        {visible.map(g => <Line key={g} dataKey={g} type="monotone" stroke={growthColor[g]} strokeWidth={2} dot={nMax <= 4 ? { r: 4, fill: growthColor[g], stroke: '#0b1420', strokeWidth: 2 } : false} isAnimationActive={false}/>)}
         {expEscapes && <ReferenceLine x={expEscapes} stroke={growthColor.exp} strokeDasharray="3 4" label={{ value: `2ⁿ off the chart at n=${expEscapes}`, fill: '#c3cfdc', fontSize: 10, position: 'insideTopLeft' }}/>}
       </LineChart>
     </ResponsiveContainer></div>
+    {nMax <= 4 && <p className="u1-small">At n = {nMax} the functions are still tangled: {nMax === 1 ? 'log₂ 1 and 1·log₂ 1 are 0, while 1, n and n² are all 1.' : '2ⁿ and n² are equal at n = 2 and n = 4, and n² is even ahead at n = 3.'} Asymptotic notation is about what happens as n keeps growing, so drag the slider further.</p>}
     <div className="u1-race">
       <div className="u1-race-head"><span>Function</span><span>Value at n = {nMax}</span><span>When n doubles, it…</span></div>
       {sorted.map(g => <div key={g} className={hidden.has(g) ? 'off' : ''}><span><i style={{ background: growthColor[g] }}/>{growth[g].label}</span><b>{compact(growth[g].f(nMax))}</b><span>{growth[g].doubling}</span></div>)}

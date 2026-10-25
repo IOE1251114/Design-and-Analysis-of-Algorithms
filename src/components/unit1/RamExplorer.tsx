@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { CartesianGrid, Line, LineChart, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { CircleHelp, Cpu } from 'lucide-react'
-import { growth, ramPrograms, ramTrace, type RamProgramId } from '../../domain/unit1'
+import { RAM_MAX_N, growth, ramPrograms, ramTrace, type RamProgramId } from '../../domain/unit1'
 import { Legend, PlayerBar, Tabs, axis, grid, growthColor, tooltipStyle, usePlayer } from './shared'
 
 const ids: RamProgramId[] = ['constant', 'linear', 'quadratic']
@@ -16,7 +16,7 @@ export function RamExplorer({ onSteps }: { onSteps?: (k: number) => void }) {
   const cur = trace[p.step]
   const execCount = useMemo(() => { const c = P.lines.map(() => 0); for (let k = 0; k <= p.step; k++) c[trace[k].line]++; return c }, [trace, p.step, P])
   const finalTotal = trace[trace.length - 1].total
-  const chartData = useMemo(() => Array.from({ length: 12 }, (_, i) => ({ n: i + 1, constant: ramPrograms.constant.count(i + 1), linear: ramPrograms.linear.count(i + 1), quadratic: ramPrograms.quadratic.count(i + 1) })), [])
+  const chartData = useMemo(() => Array.from({ length: RAM_MAX_N }, (_, i) => ({ n: i + 1, constant: ramPrograms.constant.count(i + 1), linear: ramPrograms.linear.count(i + 1), quadratic: ramPrograms.quadratic.count(i + 1) })), [])
   const colour = (id: RamProgramId) => growthColor[ramPrograms[id].growth]
   const doubling = (id: RamProgramId) => ramPrograms[id].count(2 * n) / ramPrograms[id].count(n)
 
@@ -24,7 +24,7 @@ export function RamExplorer({ onSteps }: { onSteps?: (k: number) => void }) {
     <div className="panel">
       <div className="panel-heading"><div><span className="kicker">RAM MODEL TRACER</span><h2>Watch the machine pay for each step</h2><p>Each line is charged the number of primitive operations it performs. Step through the program and see the cost add up line by line.</p></div><span className="panel-icon"><Cpu size={19}/></span></div>
       <Tabs value={prog} onChange={setProg} options={ids.map(id => ({ id, label: `${ramPrograms[id].title} · ${growth[ramPrograms[id].growth].theta}` }))}/>
-      <div className="input-row"><label>Input size n <strong>{n}</strong></label><input type="range" min="1" max="12" value={n} onChange={e => setN(Number(e.target.value))}/></div>
+      <div className="input-row"><label>Input size n <strong>{n}</strong></label><input type="range" min="1" max={RAM_MAX_N} value={n} onChange={e => setN(Number(e.target.value))}/></div>
 
       <div className="u1-ram">
         <div className="u1-code" aria-label="Pseudocode with cost per line">
@@ -51,7 +51,7 @@ export function RamExplorer({ onSteps }: { onSteps?: (k: number) => void }) {
 
     <div className="panel side-insight">
       <span className="kicker">COST AS n GROWS</span>
-      <h3>Total units T(n), n = 1…12</h3>
+      <h3>Total units T(n), n = 1…{RAM_MAX_N}</h3>
       <Legend items={ids.map(id => ({ id, label: `${ramPrograms[id].title} (${growth[ramPrograms[id].growth].label})`, color: colour(id) }))}/>
       <div className="u1-chart" style={{ height: 230 }}><ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData} margin={{ top: 8, right: 12, bottom: 4, left: -8 }}>

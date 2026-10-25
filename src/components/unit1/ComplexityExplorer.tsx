@@ -28,7 +28,7 @@ function LoopCounter({ onSteps }: { onSteps?: (k: number) => void }) {
   return <section className="panel">
     <div className="panel-heading"><div><span className="kicker">COUNTING WORKBENCH</span><h2>Every square is one execution of work()</h2><p>Pick a loop shape and press play. Squares light up in the exact order the loops run them, so the area you see <em>is</em> the operation count.</p></div><span className="panel-icon"><Layers3 size={19}/></span></div>
     <Tabs value={id} onChange={setId} options={patternIds.map(x => ({ id: x, label: patterns[x].label }))}/>
-    <div className="input-row"><label>Input size n <strong>{n}</strong></label><input type="range" min="1" max="16" value={n} onChange={e => setN(Number(e.target.value))}/></div>
+    <div className="input-row"><label>Input size n <strong>{n}</strong></label><input type="range" min="1" max="20" value={n} onChange={e => setN(Number(e.target.value))}/></div>
 
     <div className="u1-loop">
       <div className="u1-code u1-code-small">

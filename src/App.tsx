@@ -12,6 +12,7 @@ import { RamExplorer } from './components/unit1/RamExplorer'
 import { AsymptoticExplorer } from './components/unit1/AsymptoticExplorer'
 import { ComplexityExplorer } from './components/unit1/ComplexityExplorer'
 import { ParadigmExplorer } from './components/unit1/ParadigmExplorer'
+import { Unit1Theory, hasUnit1Theory } from './components/unit1/TheoryNotes'
 
 type UnitId = 'u1' | 'u2' | 'u3' | 'u4' | 'u5'
 type Mode = 'explore' | 'student' | 'teacher'
@@ -149,6 +150,7 @@ function App() {
         {mode === 'explore' && <>
           <section className="learning-toolbar"><div><span className="kicker">CONCEPT WORKSPACE</span><h2>Learn by changing the input</h2></div><button className="quiet-button" onClick={() => setShowTheory(v => !v)}><BookOpen size={15}/>{showTheory ? 'Hide' : 'Show'} theory</button></section>
           {showTheory && <section className="theory-strip"><div className="theory-icon"><BrainCircuit size={19}/></div><div><span className="kicker">THE IDEA</span><p>{theoryFor(activeTopic)}</p><div className="tag-row">{topic.tags.map(tag => <span key={tag}>{tag}</span>)}</div></div><div className="theory-complexity"><small>COMPLEXITY / KEY PROPERTY</small><strong>{topic.complexity}</strong></div></section>}
+          {showTheory && hasUnit1Theory(activeTopic) && <Unit1Theory topic={activeTopic}/>}
 
           {activeTopic === 'ram' && <RamExplorer onSteps={recordSteps}/>}
           {activeTopic === 'asymptotic' && <AsymptoticExplorer/>}

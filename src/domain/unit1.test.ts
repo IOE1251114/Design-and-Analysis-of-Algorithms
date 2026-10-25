@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { bbItems, boundG, branchAndBound, greedyCoins, mergeSortFrames, optimalCoins, patternCells, patterns, queensTrace, ramPrograms, ramTrace, recurrences, recursionTree, witness, quad, type PatternId, type RamProgramId } from './unit1'
+import { bbItems, boundG, branchAndBound, greedyCoins, greedySteps, mergeSortTrace, optimalCoins, patternCells, patterns, queensTrace, queensTree, ramPrograms, ramTrace, recurrences, recursionTree, witness, quad, type PatternId, type RamProgramId } from './unit1'
 
 const last = <T,>(a: T[]): T => a[a.length - 1]
 describe('RAM traces', () => {
-  for (const id of Object.keys(ramPrograms) as RamProgramId[]) it(`${id}: trace total equals the closed form for n = 1..12`, () => {
-    for (let n = 1; n <= 12; n++) {
+  for (const id of Object.keys(ramPrograms) as RamProgramId[]) it(`${id}: trace total equals the closed form for n = 1..20`, () => {
+    for (let n = 1; n <= 20; n++) {
       const t = ramTrace(id, n)
       expect(t[t.length - 1].total).toBe(ramPrograms[id].count(n))
       expect(t.reduce((s, x) => s + x.cost, 0)).toBe(ramPrograms[id].count(n))
@@ -31,7 +31,7 @@ describe('bound witness', () => {
 
 describe('loop patterns', () => {
   for (const id of Object.keys(patterns) as PatternId[]) it(`${id}: number of cells equals the closed form`, () => {
-    for (let n = 1; n <= 16; n++) expect(patternCells(id, n).length).toBe(patterns[id].count(n))
+    for (let n = 1; n <= 20; n++) expect(patternCells(id, n).length).toBe(patterns[id].count(n))
   })
 })
 
@@ -48,10 +48,22 @@ describe('recursion tree', () => {
 })
 
 describe('paradigms', () => {
-  it('merge sort frames end sorted', () => {
-    const ms = mergeSortFrames([38, 27, 43, 3, 9, 82, 10, 15])
-    expect(ms.sortedAt.get('0-8')!.values).toEqual([3, 9, 10, 15, 27, 38, 43, 82])
-    expect(ms.frames.length).toBe(7)
+  it('merge sort trace sorts and counts real comparisons', () => {
+    const ms = mergeSortTrace([38, 27, 43, 3, 9, 82, 10, 15])
+    expect(ms.result).toEqual([3, 9, 10, 15, 27, 38, 43, 82])
+    expect(last(ms.frames).done['0-8']).toEqual(ms.result)
+    expect(mergeSortTrace([1, 2, 3, 4, 5, 6, 7, 8]).comparisons).toBe(12) // sorted input: n/2·log n
+    expect(mergeSortTrace([8, 7, 6, 5, 4, 3, 2, 1]).comparisons).toBe(12)
+  })
+  it('greedy steps add up to the amount', () => {
+    for (let a = 1; a <= 30; a++) { const st = greedySteps([4, 3, 1], a); expect(st.reduce((s, x) => s + x.coin, 0)).toBe(a); expect(st.map(x => x.coin)).toEqual(greedyCoins([4, 3, 1], a)) }
+  })
+  it('queens tree mirrors the trace', () => {
+    for (const N of [4, 5, 6]) {
+      const ev = queensTrace(N), t = queensTree(ev)
+      expect(t.nodes.length - 1).toBe(ev.filter(e => e.kind !== 'backtrack' && e.kind !== 'solved').length)
+      expect(t.nodes.filter(n => n.solution).length).toBe(N)
+    }
   })
   it('greedy coin change fails for {4,3,1} at 6', () => {
     expect(greedyCoins([4, 3, 1], 6)).toEqual([4, 1, 1])
@@ -64,10 +76,13 @@ describe('paradigms', () => {
     expect(last(queensTrace(4)).queens).toEqual([1, 3, 0, 2])
     for (const N of [5, 6]) { const q = last(queensTrace(N)); expect(q.kind).toBe('solved'); expect(new Set(q.queens).size).toBe(N) }
   })
-  it('branch and bound finds the DP optimum (45) and prunes', () => {
-    const r = branchAndBound(bbItems, 8)
-    expect(r.best).toBe(45)
-    expect(r.visited.length).toBeLessThan(r.fullTree)
-    expect(r.visited.some(n => n.status === 'pruned')).toBe(true)
+  it('branch and bound finds the DP optimum (45) with every strategy', () => {
+    for (const s of ['lifo', 'fifo', 'lc'] as const) {
+      const r = branchAndBound(bbItems, 8, s)
+      expect(r.best).toBe(45)
+      expect(r.visited.length).toBeLessThanOrEqual(r.fullTree)
+      expect(last(r.visited).live).toEqual([])
+    }
+    expect(branchAndBound(bbItems, 8, 'lifo').visited.some(n => n.status === 'pruned')).toBe(true)
   })
 })

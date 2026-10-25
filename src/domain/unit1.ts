@@ -21,7 +21,8 @@ export interface RamLine { code: string; cost: number; why: string }
 export interface RamStep { line: number; cost: number; total: number; vars: Record<string, number | string>; arr: number[]; active: number[]; note: string }
 export interface RamProgram { title: string; growth: GrowthId; lines: RamLine[]; formula: string; count: (n: number) => number }
 
-export const ramInput = (n: number) => [7, 3, 9, 2, 8, 4, 6, 1, 5, 10, 12, 11].slice(0, Math.max(1, Math.min(12, n)))
+export const RAM_MAX_N = 20
+export const ramInput = (n: number) => [7, 3, 9, 2, 8, 4, 6, 1, 5, 10, 12, 11, 15, 13, 18, 14, 20, 16, 19, 17].slice(0, Math.max(1, Math.min(RAM_MAX_N, n)))
 
 export const ramPrograms: Record<RamProgramId, RamProgram> = {
   constant: {
@@ -168,31 +169,51 @@ export function recursionTree(r: Recurrence, n: number) {
   return { levels, total, crit, critLabel: pow(crit), caseNo, theta, shape, fLabel: pow(r.d) }
 }
 
-/* ---------- Divide and conquer: merge sort frames ---------- */
-export interface MsNode { lo: number; hi: number; depth: number; values: number[]; sorted: boolean }
-export function mergeSortFrames(input: number[]) {
+/* ---------- Divide and conquer: merge sort, one comparison per frame ---------- */
+export interface MsNode { lo: number; hi: number; depth: number; key: string }
+export interface MsFrame {
+  phase: 'divide' | 'merge'
+  visibleDepth: number
+  /** Node currently being merged (merge phase only). */
+  node?: string
+  left?: number[]; right?: number[]; i?: number; j?: number; out?: number[]
+  /** Sorted contents of every node whose merge has finished. */
+  done: Record<string, number[]>
+  comparisons: number
+  title: string
+  detail: string
+}
+export function mergeSortTrace(input: number[]) {
   const nodes: MsNode[] = []
-  const build = (lo: number, hi: number, depth: number) => { nodes.push({ lo, hi, depth, values: input.slice(lo, hi), sorted: hi - lo <= 1 }); if (hi - lo > 1) { const m = (lo + hi) >> 1; build(lo, m, depth + 1); build(m, hi, depth + 1) } }
+  const build = (lo: number, hi: number, depth: number) => { nodes.push({ lo, hi, depth, key: `${lo}-${hi}` }); if (hi - lo > 1) { const m = (lo + hi) >> 1; build(lo, m, depth + 1); build(m, hi, depth + 1) } }
   build(0, input.length, 0)
   const maxDepth = Math.max(...nodes.map(x => x.depth))
-  const sortedAt = new Map<string, { values: number[]; comparisons: number }>()
-  const sortRange = (lo: number, hi: number): { values: number[]; comparisons: number } => {
-    if (hi - lo <= 1) return { values: input.slice(lo, hi), comparisons: 0 }
-    const m = (lo + hi) >> 1, L = sortRange(lo, m), R = sortRange(m, hi)
-    const out: number[] = []; let i = 0, j = 0, cmp = 0
-    while (i < L.values.length && j < R.values.length) { cmp++; out.push(L.values[i] <= R.values[j] ? L.values[i++] : R.values[j++]) }
-    const res = { values: [...out, ...L.values.slice(i), ...R.values.slice(j)], comparisons: cmp }
-    sortedAt.set(`${lo}-${hi}`, res); return res
+  const frames: MsFrame[] = []
+  const done: Record<string, number[]> = {}
+  for (let i = 0; i < input.length; i++) done[`${i}-${i + 1}`] = [input[i]]
+  let comparisons = 0
+  for (let d = 0; d <= maxDepth; d++) frames.push({ phase: 'divide', visibleDepth: d, done: {}, comparisons: 0,
+    title: d === 0 ? 'Divide: the whole input is one problem' : d === maxDepth ? `Divide: level ${d} reaches the base case` : `Divide: level ${d}`,
+    detail: d === 0 ? `One unsorted problem of size n = ${input.length}.` : d === maxDepth ? 'Every piece has size 1. A single element is already sorted, so the recursion stops here.' : `Split every piece at its middle: ${2 ** d} subproblems of size about n/${2 ** d}. Dividing costs only O(1) per piece.` })
+  const sorted = (lo: number, hi: number): number[] => {
+    if (hi - lo <= 1) return input.slice(lo, hi)
+    const m = (lo + hi) >> 1, L = sorted(lo, m), R = sorted(m, hi), key = `${lo}-${hi}`, out: number[] = []
+    let i = 0, j = 0
+    const snap = (title: string, detail: string, ii = i, jj = j) => frames.push({ phase: 'merge', visibleDepth: maxDepth, node: key, left: L, right: R, i: ii, j: jj, out: [...out], done: { ...done }, comparisons, title, detail })
+    while (i < L.length && j < R.length) {
+      comparisons++
+      const takeLeft = L[i] <= R[j], ii = i, jj = j
+      out.push(takeLeft ? L[i++] : R[j++])
+      snap(`Combine [${L.join(', ')}] + [${R.join(', ')}]`, `Compare ${L[ii]} with ${R[jj]}: ${takeLeft ? `${L[ii]} ≤ ${R[jj]}, take ${L[ii]} from the left run` : `${R[jj]} < ${L[ii]}, take ${R[jj]} from the right run`}.`, ii, jj)
+    }
+    const rest = [...L.slice(i), ...R.slice(j)]
+    if (rest.length) { out.push(...rest); snap(`Combine [${L.join(', ')}] + [${R.join(', ')}]`, `One run is empty, so copy the rest (${rest.join(', ')}) without comparing.`, L.length, R.length) }
+    done[key] = [...out]
+    frames.push({ phase: 'merge', visibleDepth: maxDepth, node: key, left: L, right: R, i: L.length, j: R.length, out: [...out], done: { ...done }, comparisons, title: `Merged [${out.join(', ')}]`, detail: `This piece of ${hi - lo} elements is sorted. Merging it took at most ${hi - lo - 1} comparisons.` })
+    return out
   }
-  sortRange(0, input.length)
-  // Frames: split down one level at a time, then merge back up one level at a time.
-  const frames: { visibleDepth: number; mergedFrom: number; title: string; detail: string }[] = []
-  for (let d = 0; d <= maxDepth; d++) frames.push({ visibleDepth: d, mergedFrom: Infinity, title: d === 0 ? 'Input' : `Divide: level ${d}`, detail: d === 0 ? 'One unsorted problem of size n.' : d === maxDepth ? 'Every piece has size 1, which is already sorted (base case).' : `Split each piece in half: ${2 ** d} subproblems of size ≈ n/${2 ** d}.` })
-  for (let d = maxDepth - 1; d >= 0; d--) {
-    const cmp = nodes.filter(x => x.depth === d && x.hi - x.lo > 1).reduce((s, x) => s + (sortedAt.get(`${x.lo}-${x.hi}`)?.comparisons ?? 0), 0)
-    frames.push({ visibleDepth: maxDepth, mergedFrom: d, title: `Combine: merge level ${d}`, detail: `Merge pairs of sorted pieces with ${cmp} comparisons (at most n − 1 per level).` })
-  }
-  return { nodes, maxDepth, frames, sortedAt }
+  const result = sorted(0, input.length)
+  return { nodes, maxDepth, frames, result, comparisons }
 }
 
 /* ---------- Greedy: coin change, greedy vs optimal ---------- */
@@ -200,6 +221,13 @@ export function greedyCoins(coins: number[], amount: number): number[] {
   const out: number[] = []; let left = amount
   for (const c of [...coins].sort((a, b) => b - a)) while (left >= c) { out.push(c); left -= c }
   return left === 0 ? out : []
+}
+/** Greedy, one irrevocable choice per step: which coin was taken, the amount before and after, and the larger coins skipped. */
+export function greedySteps(coins: number[], amount: number) {
+  const desc = [...coins].sort((a, b) => b - a), steps: { coin: number; before: number; after: number; skipped: number[] }[] = []
+  let left = amount
+  while (left > 0) { const coin = desc.find(c => c <= left)!; steps.push({ coin, before: left, after: left - coin, skipped: desc.filter(c => c > left) }); left -= coin }
+  return steps
 }
 export function optimalCoins(coins: number[], amount: number): number[] {
   const best: (number[] | null)[] = Array(amount + 1).fill(null); best[0] = []
@@ -226,31 +254,71 @@ export function queensTrace(N: number): QueenEvent[] {
   solve(0)
   return ev
 }
+/** The state-space tree that the search above explores. Each node remembers when it appeared and when it died,
+ *  so the tree can be drawn exactly as it stood at any step. x is a leaf-order layout position. */
+export interface QNode { id: number; parent: number; depth: number; col: number; kind: 'root' | 'place' | 'reject'; born: number; died: number | null; solution: boolean; x: number; children: number[] }
+export function queensTree(events: QueenEvent[]) {
+  const nodes: QNode[] = [{ id: 0, parent: -1, depth: 0, col: -1, kind: 'root', born: -1, died: null, solution: false, x: 0, children: [] }]
+  let cur = 0
+  const current: number[] = []
+  events.forEach((e, k) => {
+    if (e.kind === 'place' || e.kind === 'reject') {
+      const id = nodes.length
+      nodes.push({ id, parent: cur, depth: nodes[cur].depth + 1, col: e.col, kind: e.kind, born: k, died: e.kind === 'reject' ? k : null, solution: false, x: 0, children: [] })
+      nodes[cur].children.push(id)
+      if (e.kind === 'place') cur = id
+    } else if (e.kind === 'backtrack') { nodes[cur].died = k; cur = nodes[cur].parent }
+    else { for (let n = cur; n > 0; n = nodes[n].parent) nodes[n].solution = true }
+    current.push(cur)
+  })
+  let slot = 0
+  const lay = (id: number) => { const n = nodes[id]; if (!n.children.length) { n.x = slot++; return } n.children.forEach(lay); n.x = (nodes[n.children[0]].x + nodes[n.children[n.children.length - 1]].x) / 2 }
+  lay(0)
+  return { nodes, leaves: slot, current }
+}
 
-/* ---------- Branch and bound: 0/1 knapsack with the fractional (greedy) upper bound ---------- */
+/* ---------- Branch and bound: 0/1 knapsack with the fractional (greedy) upper bound ----------
+ * One frame per node taken from the live-node list. The strategy only decides WHICH live node is expanded next:
+ * LIFO = stack (depth-first), FIFO = queue (breadth-first), LC = largest bound first (best-first). */
+export type BBStrategy = 'lifo' | 'fifo' | 'lc'
 export interface BBItem { name: string; w: number; v: number }
-export interface BBNode { id: string; depth: number; path: number[]; w: number; v: number; bound: number; status: 'expanded' | 'pruned' | 'infeasible' | 'leaf'; incumbent: number; note: string }
+export interface BBLive { id: string; bound: number | null }
+export interface BBNode { id: string; depth: number; path: number[]; w: number; v: number; bound: number; status: 'expanded' | 'pruned' | 'infeasible' | 'leaf'; incumbent: number; note: string; live: BBLive[] }
 export const bbItems: BBItem[] = [{ name: 'Item 1', w: 2, v: 12 }, { name: 'Item 2', w: 3, v: 20 }, { name: 'Item 3', w: 4, v: 24 }, { name: 'Item 4', w: 5, v: 25 }]
-export function branchAndBound(items: BBItem[], cap: number) {
+export function branchAndBound(items: BBItem[], cap: number, strategy: BBStrategy = 'lifo') {
   const order = items.map((it, i) => ({ ...it, i })).sort((a, b) => b.v / b.w - a.v / a.w || a.i - b.i)
   const bound = (depth: number, w: number, v: number) => { let b = v, room = cap - w; for (let k = depth; k < order.length && room > 0; k++) { const take = Math.min(1, room / order[k].w); b += take * order[k].v; room -= take * order[k].w } return b }
+  type Live = { depth: number; path: number[]; w: number; v: number; bound: number | null; seq: number }
+  let seq = 0
+  const make = (depth: number, path: number[], w: number, v: number): Live => ({ depth, path, w, v, bound: w > cap ? null : bound(depth, w, v), seq: seq++ })
+  const live: Live[] = [make(0, [], 0, 0)]
+  const take = (): Live => {
+    if (strategy === 'lifo') return live.pop()!
+    if (strategy === 'fifo') return live.shift()!
+    let k = 0; for (let m = 1; m < live.length; m++) { const a = live[m].bound ?? -1, b = live[k].bound ?? -1; if (a > b || (a === b && live[m].seq < live[k].seq)) k = m }
+    return live.splice(k, 1)[0]
+  }
+  const snapshot = (): BBLive[] => {
+    const xs = live.map(x => ({ id: x.path.join('') || 'root', bound: x.bound, seq: x.seq }))
+    const ordered = strategy === 'lifo' ? [...xs].reverse() : strategy === 'fifo' ? xs : [...xs].sort((a, b) => (b.bound ?? -1) - (a.bound ?? -1) || a.seq - b.seq)
+    return ordered.map(({ id, bound }) => ({ id, bound }))
+  }
   const visited: BBNode[] = []
   let best = 0, bestPath: number[] = []
-  const visit = (depth: number, path: number[], w: number, v: number) => {
-    const id = path.join('') || 'root'
-    if (w > cap) { visited.push({ id, depth, path, w, v, bound: 0, status: 'infeasible', incumbent: best, note: `Weight ${w} > capacity ${cap}: infeasible, discard.` }); return }
-    const b = bound(depth, w, v)
-    if (depth === order.length) {
-      const improved = v > best
-      if (improved) { best = v; bestPath = path }
-      visited.push({ id, depth, path, w, v, bound: v, status: 'leaf', incumbent: best, note: improved ? `Complete solution worth ${v}: new best.` : `Complete solution worth ${v}: not better than ${best}.` }); return
+  while (live.length) {
+    const n = take(), id = n.path.join('') || 'root', base = { id, depth: n.depth, path: n.path, w: n.w, v: n.v }
+    if (n.bound === null) { visited.push({ ...base, bound: 0, status: 'infeasible', incumbent: best, note: `Weight ${n.w} > capacity ${cap}: infeasible, discard.`, live: snapshot() }); continue }
+    if (n.depth === order.length) {
+      const improved = n.v > best
+      if (improved) { best = n.v; bestPath = n.path }
+      visited.push({ ...base, bound: n.v, status: 'leaf', incumbent: best, note: improved ? `Complete solution worth ${n.v}: new best.` : `Complete solution worth ${n.v}: not better than ${best}.`, live: snapshot() }); continue
     }
-    if (b <= best) { visited.push({ id, depth, path, w, v, bound: b, status: 'pruned', incumbent: best, note: `Bound ${fmt(b)} ≤ best ${best}: no completion can win, prune.` }); return }
-    visited.push({ id, depth, path, w, v, bound: b, status: 'expanded', incumbent: best, note: `Bound ${fmt(b)} > best ${best}: branch on ${order[depth].name}.` })
-    visit(depth + 1, [...path, 1], w + order[depth].w, v + order[depth].v)
-    visit(depth + 1, [...path, 0], w, v)
+    if (n.bound <= best) { visited.push({ ...base, bound: n.bound, status: 'pruned', incumbent: best, note: `Bound ${fmt(n.bound)} ≤ best ${best}: no completion can win, prune.`, live: snapshot() }); continue }
+    const it = order[n.depth]
+    const yes = make(n.depth + 1, [...n.path, 1], n.w + it.w, n.v + it.v), no = make(n.depth + 1, [...n.path, 0], n.w, n.v)
+    if (strategy === 'lifo') live.push(no, yes); else live.push(yes, no) // the "take it" child is always examined first
+    visited.push({ ...base, bound: n.bound, status: 'expanded', incumbent: best, note: `Bound ${fmt(n.bound)} > best ${best}: branch on ${it.name}, adding both children to the live list.`, live: snapshot() })
   }
-  visit(0, [], 0, 0)
   return { order, visited, best, bestPath, fullTree: 2 ** (order.length + 1) - 1 }
 }
 const fmt = (x: number) => Number.isInteger(x) ? String(x) : x.toFixed(1)

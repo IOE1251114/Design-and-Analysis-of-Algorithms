@@ -46,11 +46,14 @@ export function Legend({ items, hidden, onToggle }: { items: { id: string; label
   })}</div>
 }
 
+/** Playback speeds in steps per second. Very slow is the default so each step can be read. */
+export const SPEEDS = [{ label: 'Very slow', value: 0.75 }, { label: 'Slow', value: 1.5 }, { label: 'Normal', value: 4 }]
+
 /** Step player with play/pause. Every trace is precomputed, so playback is repeatable frame-for-frame. */
 export function usePlayer(total: number, resetKey: unknown, onSteps?: (k: number) => void) {
   const [step, setStep] = useState(0)
   const [playing, setPlaying] = useState(false)
-  const [speed, setSpeed] = useState(4)
+  const [speed, setSpeed] = useState(SPEEDS[0].value)
   const last = Math.max(0, total - 1)
   useEffect(() => { setStep(0); setPlaying(false) }, [resetKey])
   useEffect(() => {
@@ -77,7 +80,7 @@ export function PlayerBar({ p, label, nextLabel = 'Next' }: { p: Player; label?:
       <button className="btn btn-secondary" disabled={p.step === 0} onClick={p.prev}><ArrowLeft size={14}/> Back</button>
       <button className="btn btn-primary u1-play" onClick={p.toggle} aria-label={p.playing ? 'Pause' : 'Play'}>{p.playing ? <Pause size={14}/> : <Play size={14}/>}{p.playing ? 'Pause' : p.step >= p.last && p.last > 0 ? 'Replay' : 'Play'}</button>
       <button className="btn btn-secondary" disabled={p.step >= p.last} onClick={p.next}>{nextLabel} <ArrowRight size={14}/></button>
-      <label className="u1-speed">Speed<select value={p.speed} onChange={e => p.setSpeed(Number(e.target.value))}><option value={1.5}>Slow</option><option value={4}>Normal</option><option value={12}>Fast</option><option value={40}>Very fast</option></select></label>
+      <label className="u1-speed">Speed<select value={p.speed} onChange={e => p.setSpeed(Number(e.target.value))}>{SPEEDS.map(s => <option key={s.label} value={s.value}>{s.label}</option>)}</select></label>
     </div>
     <div className="u1-scrub"><span>{label ?? `Step ${p.step + 1} / ${p.last + 1}`}</span><input type="range" min={0} max={p.last} value={p.step} onChange={e => p.go(Number(e.target.value))} aria-label="Scrub through steps"/></div>
   </div>
