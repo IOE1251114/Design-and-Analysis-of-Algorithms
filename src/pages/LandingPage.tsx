@@ -194,7 +194,10 @@ export function LandingPage() {
             <span className="kicker">
               NOW LIVE · DESIGN & ANALYSIS OF ALGORITHMS
             </span>
-            <h2>Five units, from Big-O to NP-completeness</h2>
+            <h2>
+              {topicCount} interactive topics across five units, from Big-O to
+              NP-completeness
+            </h2>
             <p>
               Jump straight into any topic. Each one opens its own visualizer.
             </p>
