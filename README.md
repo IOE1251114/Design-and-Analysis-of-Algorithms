@@ -16,7 +16,32 @@ Open the local URL printed by Vite (normally `http://localhost:5173`). To make a
 ```bash
 npm run build
 npm run preview
-npm test        # checks every Unit 1 trace against its closed-form formula
+npm test        # runs the domain tests for all five units
+```
+
+## Project structure
+
+```
+.
+├── index.html               # Vite entry HTML
+├── public/                  # Static files served as-is (favicon)
+├── src/
+│   ├── main.tsx             # Router: "/" landing page, "/lab" algorithms lab
+│   ├── pages/
+│   │   ├── LandingPage.tsx  # Marketing / subject overview page
+│   │   └── LabPage.tsx      # The interactive DAA lab (Explore / Student / Teacher)
+│   ├── components/
+│   │   ├── landing/         # Landing-page pieces (animated hero field)
+│   │   ├── modes/           # Student practice panel and Teacher dashboard
+│   │   └── unit1 … unit5/   # Visualizers and theory notes for each course unit
+│   ├── domain/              # Pure logic, course data and tests (no React UI)
+│   │   ├── subjects.ts      # Subjects shown on the landing page (add new ones here)
+│   │   ├── units.ts         # DAA units, topics and topic summaries
+│   │   └── unit1 … unit5    # Algorithms behind each visual, with *.test.ts
+│   ├── styles/              # index.css imports base, lab, per-unit and landing styles
+│   └── assets/              # Images bundled by Vite (logo)
+├── vercel.json              # SPA rewrite so /lab works on refresh
+└── vite.config.ts
 ```
 
 ## Coverage

@@ -1,0 +1,16 @@
+# Dependencies and build output
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Environment and deployment
+.env
+.env.*
+.vercel/
+
+# Editor / OS / tooling
+.DS_Store
+.vscode/
+.idea/
+.claude/
+*.log

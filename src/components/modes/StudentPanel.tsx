@@ -9,7 +9,7 @@ import {
   Target,
   UserRound,
 } from "lucide-react";
-import { grade, problems, problemsFor, type Problem } from "../domain/problems";
+import { grade, problems, problemsFor, type Problem } from "../../domain/problems";
 import {
   statusLabel,
   statusOf,
@@ -19,7 +19,7 @@ import {
   type DB,
   type Student,
   type TopicRef,
-} from "../domain/tracking";
+} from "../../domain/tracking";
 
 interface Props {
   db: DB;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 /* ---------- Data model ----------
  * Everything the teacher dashboard shows is derived from these records.
@@ -249,14 +249,13 @@ export function toCSV(db: DB, topics: TopicRef[]) {
 }
 
 /* ---------- Automatic activity tracking for the visualizers ----------
- * Adds 5 s of time every 5 s while the visualizer is open and the tab is visible,
- * and counts every forward step the student takes in a stepper. */
+ * Adds 5 s of time every 5 s while the visualizer is open and the tab is visible.
+ * Forward steps are recorded separately through each explorer's `onSteps`. */
 export function useActivityTracker(
   update: UpdateDB,
   studentId: string | null,
   active: boolean,
   topic: string,
-  step: number,
 ) {
   useEffect(() => {
     if (!studentId || !active) return;
@@ -266,12 +265,4 @@ export function useActivityTracker(
     }, 5000);
     return () => clearInterval(timer);
   }, [studentId, active, topic, update]);
-  const previous = useRef(step);
-  useEffect(() => {
-    if (studentId && active && step > previous.current)
-      update((d) =>
-        withActivity(d, studentId, topic, 0, step - previous.current),
-      );
-    previous.current = step;
-  }, [step]);
 }

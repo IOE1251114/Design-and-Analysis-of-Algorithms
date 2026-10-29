@@ -1,4 +1,4 @@
-import { Code, NotesPanel, type Note } from "../unit1/TheoryNotes";
+import { Code, NotesPanel, type Note } from "../unit1/Unit1Theory";
 
 /* Theory notes for Unit IV, written against the syllabus:
  * "Greedy algorithms: elements of greedy strategy, MST — Prim and Kruskal, Dijkstra using arrays and heaps,

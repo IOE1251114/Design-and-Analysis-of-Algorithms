@@ -4,7 +4,6 @@ import {
   Line,
   LineChart,
   ReferenceDot,
-  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,

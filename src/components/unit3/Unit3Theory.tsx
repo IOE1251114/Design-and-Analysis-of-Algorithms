@@ -1,4 +1,4 @@
-import { Code, NotesPanel, type Note } from "../unit1/TheoryNotes";
+import { Code, NotesPanel, type Note } from "../unit1/Unit1Theory";
 
 /* Theory notes for Unit III, written against the syllabus:
  * "Application of Graph Traversal Techniques: Recall representation of graphs, BFS, DFS, connected components,

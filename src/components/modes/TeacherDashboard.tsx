@@ -16,8 +16,8 @@ import {
   Users,
   Wand2,
 } from "lucide-react";
-import { seedDemo } from "../domain/demo";
-import { problems, problemsFor } from "../domain/problems";
+import { seedDemo } from "../../domain/demo";
+import { problems, problemsFor } from "../../domain/problems";
 import {
   classMastery,
   statusLabel,
@@ -31,7 +31,7 @@ import {
   type Status,
   type TopicRef,
   type UpdateDB,
-} from "../domain/tracking";
+} from "../../domain/tracking";
 
 const colour: Record<Status, string> = {
   none: "#1a2737",

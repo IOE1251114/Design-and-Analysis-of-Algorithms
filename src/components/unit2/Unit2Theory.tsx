@@ -1,4 +1,4 @@
-import { Code, NotesPanel, type Note } from "../unit1/TheoryNotes";
+import { Code, NotesPanel, type Note } from "../unit1/Unit1Theory";
 
 /* Theory notes for Unit II, written against the syllabus:
  * "Searching and Sorting: Binary search trees, AVL trees and red-black trees, B-trees, hashing, Priority queues, heaps.
