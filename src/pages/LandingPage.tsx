@@ -138,25 +138,6 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section className="landing-stats">
-          <div>
-            <strong>{subjects.length}</strong>
-            <span>subjects planned</span>
-          </div>
-          <div>
-            <strong>{topicCount}</strong>
-            <span>interactive topics</span>
-          </div>
-          <div>
-            <strong>60</strong>
-            <span>auto-graded problems</span>
-          </div>
-          <div>
-            <strong>3</strong>
-            <span>workspace modes</span>
-          </div>
-        </section>
-
         <section className="landing-section" id="subjects">
           <div className="section-head">
             <span className="kicker">SUBJECTS</span>
