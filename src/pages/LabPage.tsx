@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
@@ -19,48 +19,6 @@ import {
 import logo from "../assets/logo.png";
 import { StudentPanel } from "../components/modes/StudentPanel";
 import { TeacherDashboard } from "../components/modes/TeacherDashboard";
-import { RamExplorer } from "../components/unit1/RamExplorer";
-import { AsymptoticExplorer } from "../components/unit1/AsymptoticExplorer";
-import { ComplexityExplorer } from "../components/unit1/ComplexityExplorer";
-import { ParadigmExplorer } from "../components/unit1/ParadigmExplorer";
-import { Unit1Theory, hasUnit1Theory } from "../components/unit1/Unit1Theory";
-import { SortingExplorer } from "../components/unit2/SortingExplorer";
-import { LinearSortExplorer } from "../components/unit2/LinearSortExplorer";
-import { TreeExplorer } from "../components/unit2/TreeExplorer";
-import { HeapExplorer } from "../components/unit2/HeapExplorer";
-import { HashExplorer } from "../components/unit2/HashExplorer";
-import { StringExplorer } from "../components/unit2/StringExplorer";
-import { Unit2Theory, hasUnit2Theory } from "../components/unit2/Unit2Theory";
-import { RepresentationExplorer } from "../components/unit3/RepresentationExplorer";
-import { TraversalExplorer } from "../components/unit3/TraversalExplorer";
-import { ComponentsExplorer } from "../components/unit3/ComponentsExplorer";
-import { TopoExplorer } from "../components/unit3/TopoExplorer";
-import { BiconnectedExplorer } from "../components/unit3/BiconnectedExplorer";
-import { ShortestPathExplorer } from "../components/unit3/ShortestPathExplorer";
-import { Unit3Theory, hasUnit3Theory } from "../components/unit3/Unit3Theory";
-import {
-  DijkstraImplExplorer,
-  FractionalExplorer,
-  HuffmanExplorer,
-  MSTExplorer,
-} from "../components/unit4/GreedyExplorers";
-import {
-  BinomialExplorer,
-  KnapsackDPExplorer,
-  LCSExplorer,
-  MatrixChainExplorer,
-} from "../components/unit4/DPExplorers";
-import { Unit4Theory, hasUnit4Theory } from "../components/unit4/Unit4Theory";
-import { NPCExplorer, PvsNPExplorer } from "../components/unit5/ClassExplorers";
-import {
-  ReductionExplorer,
-  SATExplorer,
-} from "../components/unit5/SatExplorers";
-import {
-  HamiltonExplorer,
-  TSPExplorer,
-} from "../components/unit5/HamTspExplorers";
-import { Unit5Theory, hasUnit5Theory } from "../components/unit5/Unit5Theory";
 import { subjects } from "../domain/subjects";
 import {
   slug,
@@ -72,65 +30,11 @@ import {
   withStudent,
   type TopicRef,
 } from "../domain/tracking";
-import {
-  allTopics,
-  topicIdea,
-  units,
-  type Mode,
-  type UnitId,
-} from "../domain/units";
-
-type StepHandler = (k: number) => void;
-
-/** The interactive visualizer for each topic id. */
-const explorers: Record<string, (onSteps: StepHandler) => ReactNode> = {
-  ram: (s) => <RamExplorer onSteps={s} />,
-  asymptotic: () => <AsymptoticExplorer />,
-  complexity: (s) => <ComplexityExplorer onSteps={s} />,
-  paradigms: (s) => <ParadigmExplorer onSteps={s} />,
-  sorting: (s) => <SortingExplorer onSteps={s} />,
-  linear: (s) => <LinearSortExplorer onSteps={s} />,
-  trees: (s) => <TreeExplorer onSteps={s} />,
-  heaps: (s) => <HeapExplorer onSteps={s} />,
-  hashing: (s) => <HashExplorer onSteps={s} />,
-  matching: (s) => <StringExplorer onSteps={s} />,
-  representations: () => <RepresentationExplorer />,
-  traversal: (s) => <TraversalExplorer onSteps={s} />,
-  components: (s) => <ComponentsExplorer onSteps={s} />,
-  topological: (s) => <TopoExplorer onSteps={s} />,
-  biconnected: (s) => <BiconnectedExplorer onSteps={s} />,
-  shortest: (s) => <ShortestPathExplorer onSteps={s} />,
-  mst: (s) => <MSTExplorer onSteps={s} />,
-  dijkstra: (s) => <DijkstraImplExplorer onSteps={s} />,
-  greedy: (s) => <FractionalExplorer onSteps={s} />,
-  huffman: (s) => <HuffmanExplorer onSteps={s} />,
-  binomial: (s) => <BinomialExplorer onSteps={s} />,
-  matrixchain: (s) => <MatrixChainExplorer onSteps={s} />,
-  lcs: (s) => <LCSExplorer onSteps={s} />,
-  dp: (s) => <KnapsackDPExplorer onSteps={s} />,
-  pnp: (s) => <PvsNPExplorer onSteps={s} />,
-  npc: (s) => <NPCExplorer onSteps={s} />,
-  reductions: (s) => <ReductionExplorer onSteps={s} />,
-  sat: (s) => <SATExplorer onSteps={s} />,
-  hamiltonian: (s) => <HamiltonExplorer onSteps={s} />,
-  tsp: (s) => <TSPExplorer onSteps={s} />,
-};
-
-/** Syllabus theory notes, one component per unit. */
-const theoryNotes: [
-  (id: string) => boolean,
-  (p: { topic: string }) => ReactNode,
-][] = [
-  [hasUnit1Theory, Unit1Theory],
-  [hasUnit2Theory, Unit2Theory],
-  [hasUnit3Theory, Unit3Theory],
-  [hasUnit4Theory, Unit4Theory],
-  [hasUnit5Theory, Unit5Theory],
-];
+import { ideaFor, topicsOf, type Mode } from "../domain/course";
+import type { Course } from "../courses/types";
 
 const STUDENT_KEY = "vatrix-student";
 const MASTERED = 75;
-const currentSubject = subjects.find((s) => s.path === "/lab")!;
 
 function readStudentName() {
   try {
@@ -140,20 +44,22 @@ function readStudentName() {
   }
 }
 
-export function LabPage() {
+export function LabPage({ course }: { course: Course }) {
+  const { units } = course;
+  const allTopics = topicsOf(units);
+  const currentSubject = subjects.find((s) => s.id === course.subjectId)!;
   const [searchParams] = useSearchParams();
   const initialTopic =
-    allTopics.find((t) => t.id === searchParams.get("topic"))?.id ?? "ram";
+    allTopics.find((t) => t.id === searchParams.get("topic"))?.id ??
+    allTopics[0].id;
   const initialMode = searchParams.get("mode");
   const [mode, setMode] = useState<Mode>(
     initialMode === "student" || initialMode === "teacher"
       ? initialMode
       : "explore",
   );
-  const [activeUnit, setActiveUnit] = useState<UnitId>(
-    () =>
-      units.find((u) => u.topics.some((t) => t.id === initialTopic))?.id ??
-      "u1",
+  const [activeUnit, setActiveUnit] = useState(
+    () => units.find((u) => u.topics.some((t) => t.id === initialTopic))!.id,
   );
   const [activeTopic, setActiveTopic] = useState(initialTopic);
   const [search, setSearch] = useState("");
@@ -215,10 +121,11 @@ export function LabPage() {
       /* storage unavailable */
     }
   };
-  const setTopic = (topicId: string, unitId?: UnitId) => {
+  const setTopic = (topicId: string) => {
     const parent = units.find((u) => u.topics.some((t) => t.id === topicId));
+    if (!parent) return;
     setActiveTopic(topicId);
-    setActiveUnit(unitId ?? parent?.id ?? "u1");
+    setActiveUnit(parent.id);
     setNavOpen(false);
     window.scrollTo({ top: 0 });
   };
@@ -368,7 +275,7 @@ export function LabPage() {
                         key={t.id}
                         className={`topic-link ${activeTopic === t.id ? "topic-active" : ""}`}
                         aria-current={activeTopic === t.id ? "page" : undefined}
-                        onClick={() => setTopic(t.id, u.id)}
+                        onClick={() => setTopic(t.id)}
                       >
                         <span className="topic-dot" />
                         <span>{t.title}</span>
@@ -541,7 +448,7 @@ export function LabPage() {
                     </div>
                     <div>
                       <span className="kicker">THE IDEA</span>
-                      <p>{topicIdea(activeTopic)}</p>
+                      <p>{ideaFor(course.ideas, activeTopic)}</p>
                       <div className="tag-row">
                         {topic.tags.map((tag) => (
                           <span key={tag}>{tag}</span>
@@ -553,14 +460,11 @@ export function LabPage() {
                       <strong>{topic.complexity}</strong>
                     </div>
                   </section>
-                  {theoryNotes.map(
-                    ([has, Notes], k) =>
-                      has(activeTopic) && <Notes key={k} topic={activeTopic} />,
-                  )}
+                  {course.notes(activeTopic)}
                 </>
               )}
 
-              {explorers[activeTopic]?.(recordSteps) ?? (
+              {course.explorers[activeTopic]?.(recordSteps) ?? (
                 <div className="panel">
                   <h2>{topic.title}</h2>
                   <p>{topic.description}</p>
@@ -593,7 +497,7 @@ export function LabPage() {
             </button>
           </section>
           <footer className="app-footer">
-            <span>VATRIX · DESIGN & ANALYSIS OF ALGORITHMS LAB</span>
+            <span>{course.footer}</span>
             <span>Browser-local data · No server accounts</span>
           </footer>
         </div>

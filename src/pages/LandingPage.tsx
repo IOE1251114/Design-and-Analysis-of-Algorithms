@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   ArrowRight,
@@ -17,21 +17,51 @@ import {
 import myLogo from "../assets/logo.png";
 import { MorphField } from "../components/landing/MorphField";
 import { subjects } from "../domain/subjects";
-import { units } from "../domain/units";
+import { daaUnits } from "../domain/daa/units";
+import { dsUnits } from "../domain/ds/units";
+import type { Unit } from "../domain/course";
 
 const contact = {
   email: "ayaanmittal193@gmail.com",
   founders: ["Ayaan Mittal", "Abhishek Roy"],
 };
 
-const topicCount = units.reduce((n, u) => n + u.topics.length, 0);
+/** Live courses, in the order their tabs appear on the page. */
+const courses: {
+  id: string;
+  label: string;
+  path: string;
+  kicker: string;
+  range: string;
+  units: Unit[];
+}[] = [
+  {
+    id: "daa",
+    label: "Algorithms",
+    path: "/algorithms",
+    kicker: "DESIGN & ANALYSIS OF ALGORITHMS",
+    range: "from Big-O to NP-completeness",
+    units: daaUnits,
+  },
+  {
+    id: "ds",
+    label: "Data Structures",
+    path: "/data-structures",
+    kicker: "DATA STRUCTURES",
+    range: "from arrays to graphs",
+    units: dsUnits,
+  },
+];
+const topicsIn = (units: Unit[]) =>
+  units.reduce((n, u) => n + u.topics.length, 0);
+const topicCount = courses.reduce((n, c) => n + topicsIn(c.units), 0);
 
 const modes = [
   {
     id: "explore",
     icon: Sparkles,
     title: "Explore",
-    text: "Step through every algorithm, change the input and watch the state, the counts and the complexity react.",
+    text: "Step through every algorithm and data structure, change the input and watch the state, the counts and the costs react.",
     cta: "Open the visualizers",
   },
   {
@@ -59,7 +89,7 @@ const steps = [
   {
     icon: Play,
     title: "Execute",
-    text: "Run the algorithm one step at a time and inspect every intermediate state.",
+    text: "Run each operation one step at a time and inspect every intermediate state.",
   },
   {
     icon: BrainCircuit,
@@ -75,6 +105,8 @@ const steps = [
 
 export function LandingPage() {
   const { hash } = useLocation();
+  const [courseId, setCourseId] = useState(courses[0].id);
+  const course = courses.find((c) => c.id === courseId)!;
 
   useEffect(() => {
     document.title = "VATRIX — Visual Algorithm Space";
@@ -98,10 +130,10 @@ export function LandingPage() {
         </Link>
         <nav>
           <a href="#subjects">Subjects</a>
-          <a href="#units">Algorithms</a>
+          <a href="#units">Courses</a>
           <a href="#modes">Modes</a>
           <a href="#method">Method</a>
-          <Link to="/lab" className="btn btn-primary">
+          <Link to="/algorithms" className="btn btn-primary">
             Launch lab <ArrowRight size={14} />
           </Link>
         </nav>
@@ -127,9 +159,9 @@ export function LandingPage() {
               <a href="#subjects" className="btn btn-primary btn-lg">
                 Browse subjects <ArrowRight size={15} />
               </a>
-              <Link to="/lab" className="btn btn-secondary btn-lg">
-                <Sparkles size={15} /> Open Algorithms lab
-              </Link>
+              <a href="#units" className="btn btn-secondary btn-lg">
+                <Sparkles size={15} /> See all {topicCount} topics
+              </a>
             </div>
           </div>
 
@@ -191,19 +223,30 @@ export function LandingPage() {
 
         <section className="landing-section" id="units">
           <div className="section-head">
-            <span className="kicker">
-              NOW LIVE · DESIGN & ANALYSIS OF ALGORITHMS
-            </span>
+            <span className="kicker">NOW LIVE · {course.kicker}</span>
             <h2>
-              {topicCount} interactive topics across five units, from Big-O to
-              NP-completeness
+              {topicsIn(course.units)} interactive topics across{" "}
+              {course.units.length} units, {course.range}
             </h2>
             <p>
               Jump straight into any topic. Each one opens its own visualizer.
             </p>
+            <div className="course-tabs" role="tablist" aria-label="Course">
+              {courses.map((c) => (
+                <button
+                  key={c.id}
+                  role="tab"
+                  aria-selected={c.id === courseId}
+                  className={c.id === courseId ? "on" : ""}
+                  onClick={() => setCourseId(c.id)}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="unit-cards">
-            {units.map((u) => (
+            {course.units.map((u) => (
               <article className="unit-card" key={u.id}>
                 <div className="unit-card-head">
                   <span className="unit-card-num">{u.number}</span>
@@ -216,7 +259,7 @@ export function LandingPage() {
                 <ul>
                   {u.topics.map((t) => (
                     <li key={t.id}>
-                      <Link to={`/lab?topic=${t.id}`}>
+                      <Link to={`${course.path}?topic=${t.id}`}>
                         {t.title} <ArrowRight size={12} />
                       </Link>
                     </li>
@@ -235,7 +278,9 @@ export function LandingPage() {
           <div className="mode-cards">
             {modes.map(({ id, icon: Icon, title, text, cta }) => (
               <Link
-                to={id === "explore" ? "/lab" : `/lab?mode=${id}`}
+                to={
+                  id === "explore" ? course.path : `${course.path}?mode=${id}`
+                }
                 className="mode-card"
                 key={id}
               >
@@ -276,10 +321,16 @@ export function LandingPage() {
             <p>No sign-up needed. Progress is saved in your browser.</p>
           </div>
           <div className="landing-cta">
-            <Link to="/lab" className="btn btn-primary btn-lg">
-              Open Algorithms lab <ArrowRight size={15} />
+            <Link to="/algorithms" className="btn btn-primary btn-lg">
+              Algorithms lab <ArrowRight size={15} />
             </Link>
-            <Link to="/lab?mode=teacher" className="btn btn-secondary btn-lg">
+            <Link to="/data-structures" className="btn btn-primary btn-lg">
+              Data Structures lab <ArrowRight size={15} />
+            </Link>
+            <Link
+              to="/algorithms?mode=teacher"
+              className="btn btn-secondary btn-lg"
+            >
               <ListChecks size={15} /> Teacher dashboard
             </Link>
           </div>
@@ -332,16 +383,16 @@ export function LandingPage() {
           </div>
 
           <div>
-            <h4>Lab</h4>
+            <h4>Practice</h4>
             <ul>
               <li>
-                <Link to="/lab">Explore</Link>
+                <Link to="/algorithms">Explore</Link>
               </li>
               <li>
-                <Link to="/lab?mode=student">Student practice</Link>
+                <Link to="/algorithms?mode=student">Student practice</Link>
               </li>
               <li>
-                <Link to="/lab?mode=teacher">Teacher dashboard</Link>
+                <Link to="/algorithms?mode=teacher">Teacher dashboard</Link>
               </li>
             </ul>
           </div>

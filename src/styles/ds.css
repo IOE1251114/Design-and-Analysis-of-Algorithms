@@ -1,0 +1,806 @@
+/* Data Structures lab visuals (components/ds). Colours match kit.tsx's DC palette. */
+
+.ds-label {
+  display: block;
+  font: 8px "DM Mono", monospace;
+  letter-spacing: 0.6px;
+  color: #7890a8;
+  margin: 12px 0 6px;
+  text-transform: uppercase;
+}
+.ds-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 10px;
+  margin: 10px 0;
+}
+.ds-inputs .btn {
+  min-height: 34px;
+}
+.u2-small-input.ds-tiny {
+  width: 64px;
+}
+.u2-small-input.ds-text {
+  width: 100%;
+  min-width: 0;
+}
+.ds-wide {
+  flex: 1 1 260px;
+}
+.ds-wide input {
+  flex: 1;
+}
+.ds-range {
+  gap: 10px;
+}
+.ds-range input[type="range"] {
+  width: 180px;
+  accent-color: #67d9ff;
+}
+.ds-two-ranges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin: 10px 0;
+}
+.ds-split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+.ds-split.three {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+.ds-code {
+  font: 11px "DM Mono", monospace;
+  color: #cfe8f7;
+  background: #0b1420;
+  border: 1px solid #23364b;
+  border-radius: 5px;
+  padding: 2px 6px;
+  overflow-wrap: anywhere;
+}
+.ds-code.on {
+  color: #f4c56a;
+  border-color: #6b5a2c;
+}
+.ds-bars-stage {
+  border: 1px solid #283a50;
+  background: #0b1420;
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 10px;
+  overflow-x: auto;
+}
+
+/* Memory cells */
+.ds-memory {
+  margin: 10px 0;
+  min-width: 0;
+}
+.ds-memory-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-top: 14px;
+}
+.ds-cell {
+  position: relative;
+  min-width: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid #2a3d51;
+  background: #142234;
+  border-radius: 6px;
+  padding: 7px 5px 4px;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    transform 0.2s;
+}
+.ds-cell b {
+  font: 400 13px "DM Mono", monospace;
+  color: #e2f2ff;
+  min-height: 17px;
+}
+.ds-cell i {
+  font: normal 8px "DM Mono", monospace;
+  color: #6c8299;
+  margin-top: 3px;
+}
+.ds-cell.empty {
+  background: #0b1420;
+  border-style: dashed;
+}
+.ds-cell.done {
+  background: #11342c;
+  border-color: #1aab80;
+}
+.ds-cell.mark {
+  opacity: 0.45;
+}
+.ds-cell.hi {
+  border-color: #f4c56a;
+  box-shadow: 0 0 0 1px #f4c56a, 0 0 14px #f4c56a40;
+  transform: translateY(-2px);
+  opacity: 1;
+}
+.ds-ptr {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font: 8px "DM Mono", monospace;
+  color: #f4c56a;
+}
+
+/* Basics */
+.ds-hierarchy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  color: #60748c;
+  font-size: 12px;
+}
+.ds-hierarchy span {
+  border: 1px solid #2a3b50;
+  border-radius: 999px;
+  padding: 5px 11px;
+  font: 10px "DM Mono", monospace;
+  color: #8fa3b9;
+}
+.ds-hierarchy span.on {
+  border-color: #1ea0ca;
+  color: #dff7ff;
+  background: #12283a;
+}
+.ds-file th button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  border-bottom: 1px dashed #4a6480;
+}
+.ds-file th button.on {
+  color: #f4c56a;
+  border-color: #f4c56a;
+}
+.ds-file tbody tr {
+  cursor: pointer;
+}
+.ds-file tbody tr.on td {
+  background: #12283a;
+}
+.ds-file td.col {
+  color: #f4c56a;
+}
+.ds-file td i {
+  color: #4f6680;
+}
+.ds-costs td {
+  position: relative;
+  font-family: "DM Mono", monospace;
+  font-size: 11px;
+}
+.ds-costs td.best {
+  color: #64e0b4;
+}
+.ds-bar {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: #2b5b7a;
+  margin-bottom: 4px;
+}
+.ds-costs td.best .ds-bar {
+  background: #1aab80;
+}
+.ds-compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.ds-compare > div {
+  border: 1px solid #2b3b50;
+  background: #0b1420;
+  border-radius: 10px;
+  padding: 14px;
+  display: grid;
+  gap: 4px;
+}
+.ds-compare > div.win {
+  border-color: #1aab80;
+}
+.ds-compare strong {
+  font: 600 14px "Space Grotesk", sans-serif;
+  color: #e7f4ff;
+  margin-bottom: 6px;
+}
+.ds-compare small {
+  font: 8px "DM Mono", monospace;
+  letter-spacing: 0.6px;
+  color: #7890a8;
+  margin-top: 6px;
+}
+.ds-compare b {
+  font: 12px "DM Mono", monospace;
+  color: #cfe8f7;
+}
+.ds-meter {
+  height: 8px;
+  border-radius: 4px;
+  background: #142234;
+  overflow: hidden;
+}
+.ds-meter i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #1ea0ca, #67d9ff);
+  transition: width 0.3s;
+}
+
+/* Arrays in memory */
+.ds-pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 12px 0;
+}
+.ds-grid {
+  display: grid;
+  gap: 4px;
+}
+.ds-grid button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid #2a3d51;
+  background: #142234;
+  border-radius: 6px;
+  padding: 7px 2px;
+  color: #dbeaf7;
+}
+.ds-grid button b {
+  font: 400 10px "DM Mono", monospace;
+}
+.ds-grid button i {
+  font: normal 8px "DM Mono", monospace;
+  color: #6c8299;
+}
+.ds-grid button:hover {
+  border-color: #3a5975;
+}
+.ds-grid button.on {
+  border-color: #f4c56a;
+  background: #2c2614;
+}
+
+/* Sparse matrices */
+.ds-matrix {
+  display: grid;
+  gap: 3px;
+}
+.ds-matrix span {
+  height: 28px;
+  display: grid;
+  place-items: center;
+  font: 11px "DM Mono", monospace;
+  color: #4f6680;
+  background: #0d1724;
+  border-radius: 4px;
+}
+.ds-matrix span.nz {
+  color: #e2f2ff;
+  background: #173149;
+}
+.ds-matrix span.hi {
+  outline: 2px solid #f4c56a;
+  color: #f4c56a;
+}
+.ds-triplets td,
+.ds-adj td {
+  font-family: "DM Mono", monospace;
+  text-align: center;
+}
+.ds-triplets tr.meta td {
+  color: #7890a8;
+  border-bottom: 1px solid #2a3b50;
+}
+.ds-triplets tr.on td,
+.u1-table tr.on td {
+  background: #2c2614;
+  color: #f4c56a;
+}
+
+/* Recursion */
+.ds-callstack-wrap {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  align-items: start;
+  margin-top: 8px;
+}
+.ds-code-block {
+  display: grid;
+  gap: 2px;
+  background: #0b1420;
+  border: 1px solid #23364b;
+  border-radius: 8px;
+  padding: 12px;
+  overflow-x: auto;
+}
+.ds-code-block code {
+  font: 11px/1.7 "DM Mono", monospace;
+  color: #8fa3b9;
+  white-space: pre;
+  padding: 0 6px;
+  border-radius: 4px;
+}
+.ds-code-block code.on {
+  background: #2c2614;
+  color: #f4c56a;
+}
+.ds-code-block code.ret {
+  background: #11342c;
+  color: #64e0b4;
+}
+.ds-callstack {
+  display: grid;
+  gap: 4px;
+}
+.ds-callstack .ds-label {
+  margin-top: 0;
+}
+.ds-frame {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid #2a3d51;
+  background: #142234;
+  border-radius: 6px;
+  padding: 8px 11px;
+  font: 12px "DM Mono", monospace;
+  color: #dbeaf7;
+  animation: ds-drop 0.25s ease;
+}
+.ds-frame span {
+  font-size: 9px;
+  color: #6c8299;
+}
+.ds-frame.top {
+  border-color: #f4c56a;
+  background: #2c2614;
+}
+.ds-frame.top span {
+  color: #f4c56a;
+}
+.ds-frame.empty {
+  border-style: dashed;
+  color: #64e0b4;
+}
+@keyframes ds-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* N-Queens */
+.ds-board {
+  display: grid;
+  gap: 0;
+  width: fit-content;
+  margin: 14px auto;
+  border: 1px solid #2a3b50;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.ds-board span {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  background: #172638;
+  font-size: 22px;
+  color: #e7f4ff;
+  transition: background 0.2s;
+}
+.ds-board span.dark {
+  background: #0f1b29;
+}
+.ds-board span.queen {
+  color: #67d9ff;
+}
+.ds-board span.solved {
+  background: #11342c;
+  color: #64e0b4;
+}
+.ds-board span.conflict {
+  background: #3a1c27;
+  color: #ff8b9a;
+  font-size: 16px;
+}
+.ds-board span.undo {
+  background: #241e3d;
+  color: #b8a5ff;
+  font-size: 16px;
+}
+.ds-board span.attacker {
+  box-shadow: inset 0 0 0 3px #f4c56a;
+}
+
+/* Linked lists */
+.ds-list-svg {
+  margin-top: 6px;
+}
+.ds-glist {
+  overflow-x: auto;
+  border: 1px solid #283a50;
+  background: #0b1420;
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 10px;
+}
+.ds-grow-nodes {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.ds-gnode-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.ds-gnode {
+  display: inline-grid;
+  grid-template-columns: 18px 32px 22px;
+  border: 1px solid #1ea0ca;
+  border-radius: 5px;
+  background: #13273a;
+  font: 12px "DM Mono", monospace;
+  color: #e2f2ff;
+}
+.ds-gnode > * {
+  display: grid;
+  place-items: center;
+  padding: 6px 0;
+  font-style: normal;
+}
+.ds-gnode i,
+.ds-gnode em {
+  color: #7890a8;
+  font-size: 10px;
+  border-right: 1px solid #2f4560;
+}
+.ds-gnode em {
+  border-right: 0;
+  border-left: 1px solid #2f4560;
+}
+.ds-gnode.list {
+  border-color: #b8a5ff;
+}
+.ds-gnode.list b {
+  color: #b8a5ff;
+}
+.ds-gnode.empty {
+  display: inline-block;
+  padding: 6px 10px;
+  color: #60748c;
+  border-style: dashed;
+}
+.ds-gsub {
+  padding-left: 14px;
+  border-left: 1px dashed #4b3f78;
+}
+
+/* Polynomials */
+.ds-terms > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ds-term {
+  display: inline-grid;
+  grid-template-columns: auto auto 20px;
+  align-items: center;
+  border: 1px solid #2a3d51;
+  border-radius: 6px;
+  background: #142234;
+  font: 12px "DM Mono", monospace;
+  color: #e2f2ff;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.ds-term > * {
+  padding: 6px 8px;
+  font-style: normal;
+}
+.ds-term i {
+  color: #8fd8f2;
+  border-left: 1px solid #2f4560;
+}
+.ds-term em {
+  color: #6c8299;
+  border-left: 1px solid #2f4560;
+  padding: 6px 4px;
+  text-align: center;
+}
+.ds-term.hi {
+  border-color: #f4c56a;
+  box-shadow: 0 0 10px #f4c56a40;
+}
+.ds-term.fresh {
+  border-color: #b8a5ff;
+  background: #241e3d;
+}
+.ds-term.empty {
+  padding: 6px 10px;
+  color: #60748c;
+  border-style: dashed;
+  display: inline-block;
+}
+
+/* Stacks */
+.ds-vstack {
+  display: grid;
+  gap: 3px;
+  max-width: 240px;
+}
+.ds-vcell {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #2a3d51;
+  background: #142234;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font: 13px "DM Mono", monospace;
+  color: #e2f2ff;
+}
+.ds-vcell i {
+  font: normal 9px "DM Mono", monospace;
+  color: #6c8299;
+}
+.ds-vcell span {
+  font-size: 9px;
+  color: #f4c56a;
+}
+.ds-vcell.empty {
+  background: #0b1420;
+  border-style: dashed;
+}
+.ds-vcell.top {
+  border-color: #f4c56a;
+  animation: ds-drop 0.25s ease;
+}
+.ds-vlinked {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+.ds-ptr-label {
+  font: 9px "DM Mono", monospace;
+  color: #f4c56a;
+}
+.ds-vnode {
+  display: grid;
+  grid-template-columns: 52px 46px;
+  border: 1px solid #1ea0ca;
+  border-radius: 6px;
+  background: #13273a;
+  font: 13px "DM Mono", monospace;
+  color: #e2f2ff;
+}
+.ds-vnode > * {
+  padding: 7px 0;
+  text-align: center;
+  font-style: normal;
+}
+.ds-vnode i {
+  font-size: 10px;
+  color: #7fa6c4;
+  border-left: 1px solid #2f4560;
+}
+.ds-vnode.top {
+  border-color: #f4c56a;
+  animation: ds-drop 0.25s ease;
+}
+.ds-vnode.empty {
+  display: block;
+  padding: 7px 12px;
+  color: #60748c;
+  border-style: dashed;
+}
+
+/* Expressions */
+.ds-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 12px 0;
+}
+.ds-tokens span {
+  min-width: 28px;
+  text-align: center;
+  border: 1px solid #2a3d51;
+  border-radius: 5px;
+  background: #142234;
+  padding: 6px 7px;
+  font: 13px "DM Mono", monospace;
+  color: #dbeaf7;
+}
+.ds-tokens span.done {
+  opacity: 0.4;
+}
+.ds-tokens span.hi {
+  border-color: #f4c56a;
+  color: #f4c56a;
+  background: #2c2614;
+}
+.ds-steps {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: #9cacc0;
+  line-height: 1.7;
+}
+
+/* Maze */
+.ds-maze {
+  display: grid;
+  gap: 2px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 14px auto 6px;
+}
+.ds-maze button {
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 3px;
+  background: #101b29;
+  font: 600 11px "DM Mono", monospace;
+  color: #e7f4ff;
+  padding: 0;
+  transition: background 0.15s;
+}
+.ds-maze button.wall {
+  background: repeating-linear-gradient(45deg, #5a6b82 0 4px, #46566b 4px 8px);
+}
+.ds-maze button.visited {
+  background: #1d4f6e;
+}
+.ds-maze button.frontier {
+  background: #4b3f78;
+}
+.ds-maze button.current {
+  background: #b78a28;
+}
+.ds-maze button.path {
+  background: #1aab80;
+}
+.ds-maze button.start,
+.ds-maze button.end {
+  outline: 2px solid #67d9ff;
+  outline-offset: -2px;
+}
+.ds-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  font: 9px "DM Mono", monospace;
+  color: #8fa3b9;
+  margin: 6px 0;
+}
+.ds-legend span::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 5px;
+  vertical-align: -1px;
+}
+.ds-legend .current::before {
+  background: #b78a28;
+}
+.ds-legend .frontier::before {
+  background: #4b3f78;
+}
+.ds-legend .visited::before {
+  background: #1d4f6e;
+}
+.ds-legend .wall::before {
+  background: #5a6b82;
+}
+.ds-legend .path::before,
+.ds-legend .sorted::before {
+  background: #1aab80;
+}
+.ds-legend .compare::before {
+  border: 2px solid #f4c56a;
+}
+.ds-legend .swap::before {
+  border: 2px solid #ff8b9a;
+}
+.ds-legend .min::before {
+  background: #9582db;
+}
+
+/* Sorting on keys / external sort */
+.ds-records th.primary {
+  color: #f4c56a;
+}
+.ds-records th.secondary {
+  color: #b8a5ff;
+}
+.ds-runs {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0;
+}
+.ds-run {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid #2a3b50;
+  border-radius: 8px;
+  background: #0b1420;
+  padding: 6px 8px;
+  animation: ds-drop 0.25s ease;
+}
+.ds-run i {
+  font: normal 9px "DM Mono", monospace;
+  color: #7890a8;
+  width: 46px;
+}
+.ds-run span {
+  min-width: 26px;
+  text-align: center;
+  font: 11px "DM Mono", monospace;
+  color: #dbeaf7;
+  background: #142234;
+  border-radius: 4px;
+  padding: 4px 3px;
+}
+.ds-run.hi {
+  border-color: #f4c56a;
+}
+
+/* Multigraphs */
+.ds-adj td.one {
+  color: #8fd8f2;
+}
+.ds-adj td.multi {
+  color: #f4c56a;
+  font-weight: 600;
+}
+
+@media (max-width: 620px) {
+  .ds-cell {
+    min-width: 34px;
+    padding: 6px 3px 3px;
+  }
+  .ds-cell b {
+    font-size: 11px;
+  }
+  .ds-range input[type="range"] {
+    width: 140px;
+  }
+  .ds-board span {
+    font-size: 18px;
+  }
+}

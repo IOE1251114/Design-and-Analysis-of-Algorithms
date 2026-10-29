@@ -603,3 +603,27 @@ a.subject-card:hover {
 .morph-rotate canvas:active {
   cursor: grabbing;
 }
+
+/* Course switcher above the unit cards */
+.course-tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin-top: 16px;
+  padding: 3px;
+  border: 1px solid #243246;
+  border-radius: 9px;
+  background: #0b131f;
+}
+.course-tabs button {
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #8798ad;
+  font-size: 13px;
+  padding: 7px 14px;
+}
+.course-tabs button.on {
+  background: #12283a;
+  color: #dff7ff;
+  box-shadow: inset 0 0 0 1px #2c526b;
+}

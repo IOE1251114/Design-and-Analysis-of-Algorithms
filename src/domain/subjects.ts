@@ -19,15 +19,16 @@ export const subjects: Subject[] = [
     description:
       "Asymptotic analysis, sorting, graphs, greedy and dynamic programming, and NP-completeness — five units, fully visual.",
     glyph: "O(n)",
-    path: "/lab",
+    path: "/algorithms",
   },
   {
     id: "ds",
     title: "Data Structures",
     short: "Data Structures",
     description:
-      "Arrays, linked lists, stacks, queues, trees and graphs, built and modified one operation at a time.",
+      "Arrays, recursion, linked lists, stacks and queues, trees, sorting, hashing and graphs — five units, fully visual.",
     glyph: "[ ]",
+    path: "/data-structures",
   },
   {
     id: "la",

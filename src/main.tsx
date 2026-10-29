@@ -1,14 +1,27 @@
 import React, { Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 import { LandingPage } from "./pages/LandingPage";
 import "./styles/index.css";
 
-// The lab (all visualizers and charts) is loaded only when someone opens it,
+// Each lab (its visualizers and charts) is downloaded only when someone opens it,
 // so the landing page stays light.
-const LabPage = lazy(() =>
-  import("./pages/LabPage").then((m) => ({ default: m.LabPage })),
-);
+const DaaLab = lazy(() => import("./pages/DaaLab"));
+const DsLab = lazy(() => import("./pages/DsLab"));
+
+/** Old "/lab?topic=…" links keep working. */
+function LegacyLabRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={`/algorithms${search}`} replace />;
+}
+
+const loading = <div className="page-loading">Loading lab…</div>;
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -16,15 +29,22 @@ createRoot(document.getElementById("root")!).render(
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route
-          path="/lab"
+          path="/algorithms"
           element={
-            <Suspense
-              fallback={<div className="page-loading">Loading lab…</div>}
-            >
-              <LabPage />
+            <Suspense fallback={loading}>
+              <DaaLab />
             </Suspense>
           }
         />
+        <Route
+          path="/data-structures"
+          element={
+            <Suspense fallback={loading}>
+              <DsLab />
+            </Suspense>
+          }
+        />
+        <Route path="/lab" element={<LegacyLabRedirect />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
