@@ -19,6 +19,7 @@ import { MorphField } from "../components/landing/MorphField";
 import { subjects } from "../domain/subjects";
 import { daaUnits } from "../domain/daa/units";
 import { dsUnits } from "../domain/ds/units";
+import { laUnits } from "../domain/la/units";
 import type { Unit } from "../domain/course";
 
 const contact = {
@@ -50,6 +51,14 @@ const courses: {
     kicker: "DATA STRUCTURES",
     range: "from arrays to graphs",
     units: dsUnits,
+  },
+  {
+    id: "la",
+    label: "Linear Algebra",
+    path: "/linear-algebra",
+    kicker: "LINEAR ALGEBRA",
+    range: "from groups and fields to quadratic forms",
+    units: laUnits,
   },
 ];
 const topicsIn = (units: Unit[]) =>
@@ -326,6 +335,9 @@ export function LandingPage() {
             </Link>
             <Link to="/data-structures" className="btn btn-primary btn-lg">
               Data Structures lab <ArrowRight size={15} />
+            </Link>
+            <Link to="/linear-algebra" className="btn btn-primary btn-lg">
+              Linear Algebra lab <ArrowRight size={15} />
             </Link>
             <Link
               to="/algorithms?mode=teacher"

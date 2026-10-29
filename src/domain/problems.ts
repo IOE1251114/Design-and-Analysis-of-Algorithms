@@ -1,11 +1,16 @@
 import { daaProblems } from "./daa/problems";
 import { dsProblems } from "./ds/problems";
+import { laProblems } from "./la/problems";
 import type { Problem } from "./problemKit";
 
 export type { Problem } from "./problemKit";
 
 /** Every subject's practice problems. Topic ids are unique across subjects. */
-export const problems: Problem[] = [...daaProblems, ...dsProblems];
+export const problems: Problem[] = [
+  ...daaProblems,
+  ...dsProblems,
+  ...laProblems,
+];
 
 export const problemsFor = (topic: string) =>
   problems.filter((p) => p.topic === topic);

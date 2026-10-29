@@ -35,7 +35,8 @@ export const subjects: Subject[] = [
     title: "Linear Algebra",
     short: "Linear Algebra",
     description:
-      "Vectors, matrices, transformations, eigenvalues and decompositions you can drag and see.",
+      "Vector spaces, linear maps, eigenvalues and Jordan form, inner products and quadratic forms — five units with vectors you can drag.",
     glyph: "Ax=b",
+    path: "/linear-algebra",
   },
 ];

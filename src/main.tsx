@@ -14,6 +14,7 @@ import "./styles/index.css";
 // so the landing page stays light.
 const DaaLab = lazy(() => import("./pages/DaaLab"));
 const DsLab = lazy(() => import("./pages/DsLab"));
+const LaLab = lazy(() => import("./pages/LaLab"));
 
 /** Old "/lab?topic=…" links keep working. */
 function LegacyLabRedirect() {
@@ -41,6 +42,14 @@ createRoot(document.getElementById("root")!).render(
           element={
             <Suspense fallback={loading}>
               <DsLab />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/linear-algebra"
+          element={
+            <Suspense fallback={loading}>
+              <LaLab />
             </Suspense>
           }
         />

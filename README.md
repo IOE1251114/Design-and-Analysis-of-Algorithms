@@ -1,6 +1,6 @@
 # VATRIX - Visual Algorithm Space
 
-An interactive React + TypeScript + Vite learning space with two live subjects, each a five-unit course: **Design and Analysis of Algorithms** (`/algorithms`) and **Data Structures** (`/data-structures`). Every topic has a step-by-step visualizer, syllabus-referenced theory notes and auto-graded practice, in Explore, Student and Teacher modes. Linear Algebra is listed as coming soon.
+An interactive React + TypeScript + Vite learning space with three live subjects, each a five-unit course: **Design and Analysis of Algorithms** (`/algorithms`), **Data Structures** (`/data-structures`) and **Linear Algebra** (`/linear-algebra`). Every topic has a visualizer, syllabus-referenced theory notes and auto-graded practice, in Explore, Student and Teacher modes.
 
 ## Run locally
 
@@ -16,7 +16,7 @@ Open the local URL printed by Vite (normally `http://localhost:5173`). To make a
 ```bash
 npm run build
 npm run preview
-npm test        # runs the domain tests for both subjects
+npm test        # runs the domain tests for all three subjects
 ```
 
 ## Project structure
@@ -26,29 +26,33 @@ npm test        # runs the domain tests for both subjects
 ├── index.html                 # Vite entry HTML
 ├── public/                    # Static files served as-is (favicon)
 ├── src/
-│   ├── main.tsx               # Routes: "/", "/algorithms", "/data-structures" ("/lab" redirects)
+│   ├── main.tsx               # Routes: "/", "/algorithms", "/data-structures", "/linear-algebra" ("/lab" redirects)
 │   ├── pages/
 │   │   ├── LandingPage.tsx    # Subject overview, course switcher, company footer
 │   │   ├── LabPage.tsx        # The shared lab shell (Explore / Student / Teacher)
 │   │   ├── DaaLab.tsx         # /algorithms entry (its own lazily loaded chunk)
-│   │   └── DsLab.tsx          # /data-structures entry
+│   │   ├── DsLab.tsx          # /data-structures entry
+│   │   └── LaLab.tsx          # /linear-algebra entry
 │   ├── courses/               # One file per subject: topic → visualizer and theory notes
 │   │   ├── types.ts
 │   │   ├── daa.tsx
-│   │   └── ds.tsx
+│   │   ├── ds.tsx
+│   │   └── la.tsx
 │   ├── components/
 │   │   ├── landing/           # Animated hero field
 │   │   ├── modes/             # Student practice panel and Teacher dashboard
 │   │   ├── daa/unit1 … unit5/ # Algorithms visualizers and theory notes
-│   │   └── ds/                # Data Structures visualizers (unit1 … unit5), kit.tsx, DsTheory.tsx
+│   │   ├── ds/                # Data Structures visualizers (unit1 … unit5), kit.tsx, DsTheory.tsx
+│   │   └── la/                # Linear Algebra visualizers (unit1 … unit5), kit.tsx (draggable plane), Space3D.tsx (rotatable ℝ³), LaTheory.tsx
 │   ├── domain/                # Pure logic, course data and tests (no React)
 │   │   ├── course.ts          # Unit / Topic types shared by every subject
 │   │   ├── subjects.ts        # Subjects on the landing page (add new ones here)
 │   │   ├── problems.ts        # All practice problems (problemKit.ts has the helpers)
 │   │   ├── tracking.ts        # Students, attempts, mastery, localStorage
 │   │   ├── daa/               # units.ts, problems.ts, unit1 … unit5 logic + tests
-│   │   └── ds/                # units.ts, problems.ts, arrays/lists/stacks/trees/sorting logic + ds.test.ts
-│   ├── styles/                # index.css imports base, lab, per-unit, ds and landing styles
+│   │   ├── ds/                # units.ts, problems.ts, arrays/lists/stacks/trees/sorting logic + ds.test.ts
+│   │   └── la/                # units.ts, problems.ts, linalg.ts (matrices, RREF, eigen, Jordan…), algebra.ts, spaces.ts (ℝ³, matrix, polynomial, ℂⁿ) + la.test.ts
+│   ├── styles/                # index.css imports base, lab, per-unit, ds, la and landing styles
 │   └── assets/                # Images bundled by Vite (logo)
 ├── vercel.json                # SPA rewrite so deep links work on refresh
 └── vite.config.ts
@@ -94,10 +98,20 @@ Follows the syllabus unit by unit (29 topics, 58 practice problems). Topics shar
 - **Unit IV — Trees:** level-order input, four traversals, mathematical properties, completeness, extended trees with E = I + 2n; expression trees built and evaluated bottom-up; BST/AVL/B-trees; Huffman's algorithm; general trees in left-child right-sibling form and in-order threaded trees with threads drawn; tries with insert, search and prefix queries.
 - **Unit V — Sorting, hashing & graphs:** bubble, selection and insertion sort with comparison/swap counts on random, sorted and reversed input; quick, two-way merge and heap sort; sorting on several keys with stable passes; external two-way merge sort with runs and passes; hashing; adjacency-matrix representation; DFS and BFS; topological sort; digraphs and multigraphs with counted matrices, degrees and the handshake lemma.
 
+## Coverage — Linear Algebra
+
+Follows the syllabus unit by unit (27 topics, 54 practice problems). Most visuals are a coordinate plane with vectors you drag, or a rotatable 3-D view of ℝ³; matrices can be typed in or loaded from presets.
+
+- **Unit I — Modern algebra & vector spaces:** ℤₙ operation tables with the group axioms checked live, zero divisors and when ℤₙ is a field; a subspace tester (drag u, v and c to find counterexamples); a gallery of vector spaces — ℝ³ in a rotatable 3-D view (spans as lines and planes, linear combinations, cross product, volume test), the matrix space M₂ₓ₂ (matrices as coloured tiles with coordinates in ℝ⁴ and its symmetric/diagonal/trace-zero subspaces), polynomial spaces Pₙ (curves and coefficient vectors, a Taylor basis, d/dx as a matrix) and complex spaces ℂ and ℂ² (complex scalars rotating vectors, the Hermitian inner product); span drawn as a lattice of combinations, with an ℝ³ dependence test; a basis grid that reads off coordinates; direct sums that split a vector along two lines.
+- **Unit II — Linear transformations:** the plane morphing from I to any 2 × 2 matrix with linearity checked on your vectors; step-by-step row reduction with range and null-space bases and rank + nullity = n; orthogonal and oblique projections (P² = P); Gauss–Jordan inversion of [A | I]; change of basis P⁻¹AP (diagonal in an eigenbasis); dual bases drawn as families of level lines.
+- **Unit III — Eigen-theory:** determinant as area scale and orientation, trace, transpose and cofactor expansion; a vector sweeping the circle to find eigenvectors; Cayley–Hamilton summed term by term with the minimal polynomial; diagonalization with the eigenbasis grid and Aᵏx; Jordan blocks from rank(A − λI)ᵏ; unit balls of the 1-, 2- and ∞-norms and their images.
+- **Unit IV — Inner product spaces:** dot and weighted inner products with Cauchy–Schwarz and the triangle inequality; Gram–Schmidt in the plane (stepped) and in ℝ³ (table); least squares as an orthogonal projection with draggable data points; adjoints and Hermitian / unitary / normal tests for complex matrices.
+- **Unit V — Bilinear & quadratic forms:** B(u, v) = uᵀMv with its symmetric and skew parts and congruence PᵀMP; quadratic forms as heat maps with principal axes, eigenvalues, leading minors and signature.
+
 ## Modes
 
 - **Explore:** interactive visualizers, input controls, intermediate states and concept notes. While a student is signed in, time spent and steps taken per topic are recorded automatically.
-- **Student (manual practice):** enter a name, see your mastery per topic, practice auto-graded problems (60 for Algorithms, 58 for Data Structures, at least two per topic), use hints, and open the matching visualizer. Teacher assignments appear here.
+- **Student (manual practice):** enter a name, see your mastery per topic, practice auto-graded problems (60 for Algorithms, 58 for Data Structures, 54 for Linear Algebra, at least two per topic), use hints, and open the matching visualizer. Teacher assignments appear here.
 - **Teacher (automated):** no grading or data entry. The dashboard derives class accuracy, weakest topics, most common misconceptions, students needing attention, a student × topic heatmap, per-student drill-down (time, steps, misconceptions), and one-click auto-assignment of the weakest topics. Export CSV/JSON.
 
 ## How tracking works
@@ -105,8 +119,8 @@ Follows the syllabus unit by unit (29 topics, 58 practice problems). Topics shar
 - `src/domain/problems.ts`: problem bank. Each wrong answer maps to a named misconception.
 - `src/domain/tracking.ts`: data model, localStorage persistence (`useDB`), analytics, and `useActivityTracker`.
 - Mastery = share of the last 6 attempts answered correctly (a correct answer after a hint counts half), shown only after 2+ attempts. Below 50% = struggling, below 75% = developing.
-- `src/domain/daa/**` and `src/domain/ds/*.ts`: pure, deterministic logic behind every visual (seeded, no randomness); the `*.test.ts` files verify it against textbook results.
-- Data Structures topic ids start with `ds-`, so progress in the two subjects never collides; one student profile covers both.
+- `src/domain/daa/**`, `src/domain/ds/*.ts` and `src/domain/la/*.ts`: pure, deterministic logic behind every visual (seeded, no randomness); the `*.test.ts` files verify it against textbook results.
+- Data Structures topic ids start with `ds-` and Linear Algebra ones with `la-`, so progress in different subjects never collides; one student profile covers all three.
 - `src/domain/demo.ts`: "Load demo class" in Teacher mode creates 8 synthetic students (flagged demo, removable).
 - A student tab and a teacher tab in the same browser stay in sync through the `storage` event.
 

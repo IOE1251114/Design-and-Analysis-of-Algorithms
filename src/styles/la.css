@@ -1,0 +1,354 @@
+/* Linear Algebra lab visuals (components/la). Colours match kit.tsx's LC palette. */
+
+.la-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  margin-top: 12px;
+}
+.la-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 8px 0;
+}
+.la-plane {
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  touch-action: none;
+  user-select: none;
+}
+.la-handle-hit {
+  cursor: grab;
+}
+.la-plane.dragging,
+.la-plane.dragging .la-handle-hit {
+  cursor: grabbing;
+}
+.la-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 4px;
+}
+.la-presets .btn {
+  min-height: 32px;
+}
+
+/* Matrices */
+.la-matrix,
+.la-matrix-input {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 6px 0;
+  max-width: 100%;
+}
+.la-matrix-label {
+  font: 9px "DM Mono", monospace;
+  letter-spacing: 0.4px;
+  color: #8fa3b9;
+}
+.la-bracket {
+  position: relative;
+  padding: 4px 10px;
+  border-left: 2px solid #5d7f9c;
+  border-right: 2px solid #5d7f9c;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+.la-bracket table {
+  border-collapse: collapse;
+}
+.la-bracket td {
+  font: 13px "DM Mono", monospace;
+  color: #e2f2ff;
+  text-align: center;
+  min-width: 42px;
+  padding: 5px 6px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+.la-matrix.small td {
+  font-size: 11px;
+  min-width: 34px;
+  padding: 3px 4px;
+}
+.la-bracket td.hi {
+  background: #2c2614;
+  color: #f4c56a;
+  box-shadow: inset 0 0 0 1px #f4c56a;
+}
+.la-bracket td.split {
+  border-left: 1px dashed #5d7f9c;
+}
+.la-bracket tr.row-hi td {
+  background: #12283a;
+}
+.la-input-grid {
+  display: grid;
+  gap: 4px;
+}
+.la-input-grid input,
+.la-cgrid input {
+  width: 100%;
+  border: 1px solid #2a3b50;
+  background: #0a1420;
+  border-radius: 6px;
+  color: #d8e5f4;
+  padding: 7px 4px;
+  text-align: center;
+  font: 12px "DM Mono", monospace;
+}
+.la-input-grid input:focus,
+.la-cgrid input:focus {
+  outline: none;
+  border-color: #4d8cae;
+}
+.la-cgrid {
+  display: grid;
+  grid-template-columns: repeat(2, 90px);
+  gap: 6px;
+  padding: 4px 10px;
+  border-left: 2px solid #5d7f9c;
+  border-right: 2px solid #5d7f9c;
+  border-radius: 6px;
+  width: fit-content;
+  margin: 6px 0;
+}
+.la-cgrid input {
+  width: 90px;
+}
+
+/* Vectors, equations, sliders */
+.la-vec {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font: 12px "DM Mono", monospace;
+  color: #dbeaf7;
+  border-bottom: 1px solid #2f4560;
+  padding: 0 2px;
+}
+.la-vec b {
+  font-weight: 600;
+}
+.la-vecs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 12px;
+  color: #9cacc0;
+  margin: 6px 0;
+}
+.la-eq {
+  font: 13px/1.9 "DM Mono", monospace;
+  color: #cfe8f7;
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.la-slider {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  margin: 6px 0;
+  min-width: 200px;
+}
+.la-slider span b {
+  color: #f4c56a;
+  font-family: "DM Mono", monospace;
+}
+.la-slider input[type="range"] {
+  accent-color: #67d9ff;
+  width: 100%;
+}
+
+/* Groups, rings and fields */
+.la-cayley {
+  border-collapse: separate;
+  border-spacing: 2px;
+  margin: 0 auto;
+}
+.la-cayley th {
+  font: 11px "DM Mono", monospace;
+  color: #8fa3b9;
+  padding: 4px 6px;
+}
+.la-cayley td {
+  width: 30px;
+  height: 28px;
+  text-align: center;
+  font: 12px "DM Mono", monospace;
+  color: #f0f8ff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.la-cayley td.id {
+  box-shadow: inset 0 0 0 2px #e7f4ff;
+}
+.la-cayley td.sel {
+  outline: 2px solid #f4c56a;
+}
+.la-cayley td.out {
+  color: #ff8b9a;
+  text-decoration: underline;
+}
+.la-checks {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+  display: grid;
+  gap: 6px;
+}
+.la-checks li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  border: 1px solid #2a3b50;
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 12px;
+  color: #c4d3e3;
+  background: #0b1420;
+}
+.la-checks li b {
+  font-size: 13px;
+}
+.la-checks li.ok b {
+  color: #64e0b4;
+}
+.la-checks li.no {
+  border-color: #6a2c3b;
+}
+.la-checks li.no b {
+  color: #ff8b9a;
+}
+.la-checks li span {
+  flex-basis: 100%;
+  font-size: 11px;
+  color: #8fa3b9;
+  padding-left: 21px;
+}
+.la-delta td,
+.la-delta th {
+  text-align: center;
+  font-family: "DM Mono", monospace;
+}
+.la-delta td.hi {
+  color: #64e0b4;
+}
+.la-jordan .la-bracket td {
+  min-width: 46px;
+}
+
+@media (max-width: 900px) {
+  .la-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 620px) {
+  .la-bracket td {
+    min-width: 32px;
+    font-size: 11px;
+    padding: 4px 3px;
+  }
+  .la-input-grid input {
+    padding: 6px 2px;
+  }
+  .la-cayley td {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+}
+
+/* 3-D view and vector-space gallery */
+.la-3d {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.la-3d-svg {
+  cursor: grab;
+}
+.la-3d-svg:active {
+  cursor: grabbing;
+}
+.la-3d-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.la-vec3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 5px 0;
+}
+.la-vec3 b {
+  width: 28px;
+  font: 600 13px "DM Mono", monospace;
+}
+.la-vec3 input {
+  width: 64px;
+  border: 1px solid #2a3b50;
+  background: #0a1420;
+  border-radius: 6px;
+  color: #d8e5f4;
+  padding: 6px 4px;
+  text-align: center;
+  font: 12px "DM Mono", monospace;
+}
+.la-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font: 16px "DM Mono", monospace;
+  color: #8fa3b9;
+}
+.la-tile {
+  display: grid;
+  grid-template-columns: repeat(2, 44px);
+  gap: 3px;
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid #2a3b50;
+}
+.la-tile span {
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  font: 12px "DM Mono", monospace;
+  color: #f0f8ff;
+}
+.la-tile-label {
+  display: block;
+  text-align: center;
+  font: 10px "DM Mono", monospace;
+  color: #8fa3b9;
+  margin-top: 4px;
+}
+.la-complex-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (max-width: 620px) {
+  .la-complex-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .la-tile {
+    grid-template-columns: repeat(2, 36px);
+  }
+}
