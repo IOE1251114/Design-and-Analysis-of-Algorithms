@@ -28,12 +28,20 @@ import {
   withActivity,
   withAttempt,
   withStudent,
+  type SyncStatus,
   type TopicRef,
 } from "../domain/tracking";
 import { ideaFor, topicsOf, type Mode } from "../domain/course";
 import type { Course } from "../courses/types";
 
 const STUDENT_KEY = "vatrix-student";
+const syncLabel: Record<SyncStatus, string> = {
+  local: "Saved in this browser",
+  connecting: "Connecting to the database…",
+  synced: "Saved to the cloud",
+  saving: "Saving…",
+  offline: "Offline — saved in this browser",
+};
 const MASTERED = 75;
 
 function readStudentName() {
@@ -66,7 +74,7 @@ export function LabPage({ course }: { course: Course }) {
   const [showTheory, setShowTheory] = useState(true);
   const [navOpen, setNavOpen] = useState(false);
   const [subjectMenu, setSubjectMenu] = useState(false);
-  const [db, updateDB] = useDB();
+  const [db, updateDB, syncStatus] = useDB();
   const [studentName, setStudentName] = useState(readStudentName);
 
   const unit = units.find((u) => u.id === activeUnit)!;
@@ -313,6 +321,9 @@ export function LabPage({ course }: { course: Course }) {
               </small>
             </div>
           </div>
+          <p className={`sync-status sync-${syncStatus}`} role="status">
+            <span className="sync-dot" /> {syncLabel[syncStatus]}
+          </p>
         </div>
       </aside>
 

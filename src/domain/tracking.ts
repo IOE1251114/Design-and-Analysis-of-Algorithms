@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { fetchCloudDB, pushDiff, supabase, watchCloud } from "../lib/supabase";
+import { diffDB, isEmptyDiff, mergeDB, type Diff } from "./sync";
 
 /* ---------- Data model ----------
  * Everything the teacher dashboard shows is derived from these records.
- * Storage is localStorage behind loadDB/saveDB, so moving to a real backend means
- * replacing those two functions (and useDB's storage listener) with API calls. */
+ * They live in localStorage (loadDB/saveDB) and, when Supabase is configured, in its tables;
+ * see useDB below and src/lib/supabase.ts. */
 export interface Attempt {
   problemId: string;
   topic: string;
@@ -62,26 +64,111 @@ const saveDB = (db: DB) => {
   }
 };
 
-/** Persisted DB. Also re-syncs when another tab writes, so a teacher tab sees student activity live. */
+export type SyncStatus =
+  "local" | "connecting" | "synced" | "saving" | "offline";
+
+/**
+ * The DB, kept in localStorage and — when Supabase is configured — in the cloud.
+ * On start it loads the cloud copy and merges anything only this browser had (then uploads it).
+ * Every update is written to localStorage at once and its changes are sent to Supabase in order.
+ * Changes from other devices arrive through Supabase Realtime; without Supabase, other tabs of
+ * this browser stay in sync through the storage event.
+ */
 export function useDB() {
   const [db, setDb] = useState<DB>(loadDB);
-  const update = useCallback(
-    (fn: (d: DB) => DB) =>
-      setDb((prev) => {
-        const next = fn(prev);
-        saveDB(next);
-        return next;
-      }),
-    [],
+  const [status, setStatus] = useState<SyncStatus>(
+    supabase ? "connecting" : "local",
   );
+  const current = useRef(db);
+  // Nothing is uploaded until the first cloud load has been merged, so stale local data never overwrites it.
+  const ready = useRef(false);
+  const queue = useRef<Promise<void>>(Promise.resolve());
+
+  const commit = useCallback((next: DB) => {
+    current.current = next;
+    setDb(next);
+    saveDB(next);
+  }, []);
+
+  const send = useCallback((d: Diff) => {
+    if (!supabase || !ready.current || isEmptyDiff(d)) return;
+    setStatus("saving");
+    queue.current = queue.current
+      .then(() => pushDiff(d))
+      .then(
+        () => setStatus("synced"),
+        (e) => {
+          console.warn(
+            "Could not save to Supabase; data is kept in this browser.",
+            e,
+          );
+          setStatus("offline");
+        },
+      );
+  }, []);
+
+  const update = useCallback(
+    (fn: (d: DB) => DB) => {
+      const prev = current.current;
+      const next = fn(prev);
+      if (next === prev) return;
+      commit(next);
+      send(diffDB(prev, next));
+    },
+    [commit, send],
+  );
+
   useEffect(() => {
+    if (supabase) return;
     const onStorage = (e: StorageEvent) => {
-      if (e.key === KEY) setDb(loadDB());
+      if (e.key === KEY) commit(loadDB());
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, []);
-  return [db, update] as const;
+  }, [commit]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const firstLoad = async () => {
+      try {
+        const cloud = await fetchCloudDB();
+        if (!alive) return;
+        const merged = mergeDB(cloud, current.current);
+        ready.current = true;
+        commit(merged);
+        setStatus("synced");
+        send(diffDB(cloud, merged));
+      } catch (e) {
+        if (!alive) return;
+        console.warn("Could not reach Supabase; using this browser's copy.", e);
+        setStatus("offline");
+      }
+    };
+    void firstLoad();
+    // Refresh after changes from any device, once our own pending writes have finished.
+    const stop = watchCloud(() => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        void queue.current.then(async () => {
+          if (!alive || !ready.current) return;
+          try {
+            commit(mergeDB(await fetchCloudDB(), current.current));
+          } catch {
+            /* keep the current copy; the next change will retry */
+          }
+        });
+      }, 1500);
+    });
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+      stop();
+    };
+  }, [commit, send]);
+
+  return [db, update, status] as const;
 }
 export type UpdateDB = ReturnType<typeof useDB>[1];
 

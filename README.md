@@ -19,6 +19,51 @@ npm run preview
 npm test        # runs the domain tests for all three subjects
 ```
 
+## Database (Supabase)
+
+Without a database, each browser keeps its own progress in localStorage. Connect Supabase and every student's answers, time on task and the teacher's assignments are stored in one shared Postgres database, so the Teacher dashboard sees the whole class on any device — and updates live.
+
+### 1. Create the project
+
+1. Sign up at [supabase.com](https://supabase.com) and click **New project**.
+2. Pick a name (e.g. `vatrix`), set a database password (store it in a password manager — the website never needs it) and choose the region closest to your students. Wait about a minute for it to start.
+
+### 2. Create the tables
+
+1. In the project, open **SQL Editor → New query**.
+2. Paste the whole of [`supabase/schema.sql`](supabase/schema.sql) and click **Run**. You should see "Success. No rows returned".
+3. Check **Table Editor**: `students`, `attempts`, `activity` and `assignments` should be listed, each marked as RLS enabled.
+
+### 3. Connect the website locally
+
+1. In Supabase open **Project Settings → API** (or the **Connect** button) and copy the **Project URL** and the **publishable / anon key**.
+2. In the project folder copy the template and fill in the two values:
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+3. Restart `npm run dev`. In the lab sidebar the status line changes from "Saved in this browser" to **"Saved to the cloud"**.
+4. Open Student mode, sign in with a name and answer a problem. The row appears in **Table Editor → attempts**. Anything this browser had saved before is uploaded automatically on first connect.
+
+`.env.local` is git-ignored. Never commit it, and never use the **secret / service_role** key in the website: it bypasses all security rules.
+
+### 4. Connect the deployed site (Vercel)
+
+1. In Vercel open the project → **Settings → Environment Variables**.
+2. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` with the same values (for Production and Preview).
+3. Redeploy (**Deployments → ⋯ → Redeploy**). Vite bakes these values in at build time, so a redeploy is required after any change.
+
+### How it works
+
+- `src/lib/supabase.ts` creates the client and reads/writes the tables; `src/domain/sync.ts` works out exactly which rows changed (unit-tested in `sync.test.ts`).
+- `useDB` in `src/domain/tracking.ts` writes every change to localStorage at once and sends it to Supabase in the background. If Supabase can't be reached, the status line says "Offline" and data stays in the browser until the next visit.
+- Supabase Realtime pushes other devices' changes, so an open Teacher dashboard refreshes by itself.
+
+### Security — read before sharing the link
+
+The site still has no passwords: a student is whoever types that name. The rules in `schema.sql` let any visitor **read** all progress and **add** students, attempts and assignments, but not edit or delete real attempts (only demo students can be deleted). That is fine for a class prototype, but anyone with the link can see the class's names and scores. Before real use, add [Supabase Auth](https://supabase.com/docs/guides/auth) (email sign-in), store the user id on each row, and change the policies so students only read their own rows and only teachers read everything.
+
 ## Project structure
 
 ```
@@ -48,12 +93,16 @@ npm test        # runs the domain tests for all three subjects
 │   │   ├── course.ts          # Unit / Topic types shared by every subject
 │   │   ├── subjects.ts        # Subjects on the landing page (add new ones here)
 │   │   ├── problems.ts        # All practice problems (problemKit.ts has the helpers)
-│   │   ├── tracking.ts        # Students, attempts, mastery, localStorage
+│   │   ├── tracking.ts        # Students, attempts, mastery; useDB (localStorage + Supabase sync)
+│   │   ├── sync.ts            # Row ↔ DB conversion, change detection and merging for Supabase
 │   │   ├── daa/               # units.ts, problems.ts, unit1 … unit5 logic + tests
 │   │   ├── ds/                # units.ts, problems.ts, arrays/lists/stacks/trees/sorting logic + ds.test.ts
 │   │   └── la/                # units.ts, problems.ts, linalg.ts (matrices, RREF, eigen, Jordan…), algebra.ts, spaces.ts (ℝ³, matrix, polynomial, ℂⁿ) + la.test.ts
+│   ├── lib/supabase.ts        # Supabase client: load, save and live updates
 │   ├── styles/                # index.css imports base, lab, per-unit, ds, la and landing styles
 │   └── assets/                # Images bundled by Vite (logo)
+├── supabase/schema.sql        # Tables, security rules and realtime setup — run once in Supabase
+├── .env.example               # Template for VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY
 ├── vercel.json                # SPA rewrite so deep links work on refresh
 └── vite.config.ts
 ```
@@ -126,7 +175,7 @@ Follows the syllabus unit by unit (27 topics, 54 practice problems). Most visual
 
 ## Current limits
 
-- Data is stored in the browser's `localStorage`: no sync across devices, accounts or real classes. `loadDB`/`saveDB`/`useDB` are the only storage touchpoints, so adding a backend means replacing them with API calls.
+- Without Supabase configured, data lives only in the browser's `localStorage`. With it, data is shared, but there is still one class for everyone who opens the site and no login (see "Security" above).
 - Student identity is a typed name, not authentication.
 - Auto-grading covers multiple-choice and numeric problems only. The old keyword-based writing checklist is no longer used.
 - Visualizer step counts are tracked for the sorting and BFS/DFS steppers and all Unit 1 steppers; other visualizers record time only.
@@ -134,7 +183,7 @@ Follows the syllabus unit by unit (27 topics, 54 practice problems). Most visual
 
 ## Next milestones
 
-1. Backend + authentication + class rosters; shared assignment delivery.
+1. Supabase Auth + per-class access rules; class rosters.
 2. More problems per topic (or parameterized generators) so mastery is not based on repeats of one question.
 3. "Predict the next step" interactions inside the visualizers, logged as attempts.
 4. Real implementations for the tree, Boyer–Moore and shortest-path panels; unit tests; accessibility checks.

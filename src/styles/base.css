@@ -2520,3 +2520,30 @@ input[type="range"] {
   letter-spacing: 1px;
   color: #73cfee;
 }
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 10px 0 0 !important;
+  font: 9px "DM Mono", monospace !important;
+  letter-spacing: 0.4px;
+  color: #71849b;
+}
+.sync-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #60748c;
+  flex-shrink: 0;
+}
+.sync-synced .sync-dot {
+  background: #64e0b4;
+  box-shadow: 0 0 8px #64e0b460;
+}
+.sync-saving .sync-dot,
+.sync-connecting .sync-dot {
+  background: #f4c56a;
+}
+.sync-offline .sync-dot {
+  background: #ff8b9a;
+}
