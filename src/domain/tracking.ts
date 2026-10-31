@@ -45,50 +45,65 @@ export interface TopicRef {
 }
 export type Status = "none" | "struggling" | "developing" | "strong";
 
-const KEY = "daalab-db-v4";
+export const DB_KEY = "daalab-db-v4";
 const empty = (): DB => ({ v: 1, students: {}, assignments: [] });
 
-export function loadDB(): DB {
+/** localStorage key: one shared copy without accounts, one private cache per signed-in user. */
+const keyFor = (owner: string | null | undefined) =>
+  owner ? `${DB_KEY}:${owner}` : DB_KEY;
+
+export function loadDB(key = DB_KEY): DB {
   try {
-    const parsed = JSON.parse(localStorage.getItem(KEY) ?? "null");
+    const parsed = JSON.parse(localStorage.getItem(key) ?? "null");
     return parsed?.v === 1 ? parsed : empty();
   } catch {
     return empty();
   }
 }
-const saveDB = (db: DB) => {
+const saveDB = (key: string, db: DB) => {
   try {
-    localStorage.setItem(KEY, JSON.stringify(db));
+    localStorage.setItem(key, JSON.stringify(db));
   } catch {
     /* storage full or blocked */
   }
 };
 
 export type SyncStatus =
-  "local" | "connecting" | "synced" | "saving" | "offline";
+  "local" | "signed-out" | "connecting" | "synced" | "saving" | "offline";
 
 /**
- * The DB, kept in localStorage and — when Supabase is configured — in the cloud.
- * On start it loads the cloud copy and merges anything only this browser had (then uploads it).
- * Every update is written to localStorage at once and its changes are sent to Supabase in order.
- * Changes from other devices arrive through Supabase Realtime; without Supabase, other tabs of
- * this browser stay in sync through the storage event.
+ * The DB, cached in localStorage and — when Supabase is configured — stored in the cloud.
+ *
+ * `owner` is the signed-in user's id. With Supabase, nothing is loaded until someone signs in,
+ * each account gets its own browser cache, and the database's access rules decide what comes
+ * back (a student: their own progress; a teacher: the whole class). On sign-in it merges anything
+ * that account recorded offline and uploads it. Every update is cached at once and its changes are
+ * sent to Supabase in order; other devices' changes arrive through Supabase Realtime.
+ * Without Supabase, `owner` is ignored and other tabs stay in sync through the storage event.
  */
-export function useDB() {
-  const [db, setDb] = useState<DB>(loadDB);
+export function useDB(owner?: string | null) {
+  const cloud = !!supabase;
+  const key = cloud ? keyFor(owner) : DB_KEY;
+  const [db, setDb] = useState<DB>(() =>
+    cloud && !owner ? empty() : loadDB(key),
+  );
   const [status, setStatus] = useState<SyncStatus>(
-    supabase ? "connecting" : "local",
+    !cloud ? "local" : owner ? "connecting" : "signed-out",
   );
   const current = useRef(db);
+  const keyRef = useRef(key);
   // Nothing is uploaded until the first cloud load has been merged, so stale local data never overwrites it.
   const ready = useRef(false);
   const queue = useRef<Promise<void>>(Promise.resolve());
 
-  const commit = useCallback((next: DB) => {
-    current.current = next;
-    setDb(next);
-    saveDB(next);
-  }, []);
+  const commit = useCallback(
+    (next: DB) => {
+      current.current = next;
+      setDb(next);
+      if (!cloud || keyRef.current !== DB_KEY) saveDB(keyRef.current, next);
+    },
+    [cloud],
+  );
 
   const send = useCallback((d: Diff) => {
     if (!supabase || !ready.current || isEmptyDiff(d)) return;
@@ -119,27 +134,37 @@ export function useDB() {
   );
 
   useEffect(() => {
-    if (supabase) return;
+    if (cloud) return;
     const onStorage = (e: StorageEvent) => {
-      if (e.key === KEY) commit(loadDB());
+      if (e.key === DB_KEY) commit(loadDB(DB_KEY));
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, [commit]);
+  }, [cloud, commit]);
 
   useEffect(() => {
     if (!supabase) return;
+    // A different (or no) account: start again from that account's own cache.
+    keyRef.current = key;
+    ready.current = false;
+    queue.current = Promise.resolve();
+    commit(owner ? loadDB(key) : empty());
+    if (!owner) {
+      setStatus("signed-out");
+      return;
+    }
+    setStatus("connecting");
     let alive = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const firstLoad = async () => {
       try {
-        const cloud = await fetchCloudDB();
+        const remote = await fetchCloudDB();
         if (!alive) return;
-        const merged = mergeDB(cloud, current.current);
+        const merged = mergeDB(remote, current.current);
         ready.current = true;
         commit(merged);
         setStatus("synced");
-        send(diffDB(cloud, merged));
+        send(diffDB(remote, merged));
       } catch (e) {
         if (!alive) return;
         console.warn("Could not reach Supabase; using this browser's copy.", e);
@@ -166,9 +191,19 @@ export function useDB() {
       clearTimeout(timer);
       stop();
     };
-  }, [commit, send]);
+  }, [owner, key, commit, send]);
 
   return [db, update, status] as const;
+}
+
+/** Remove every per-account cache (used on sign-out, so a shared computer keeps no one's data). */
+export function clearAccountCaches() {
+  try {
+    for (const k of Object.keys(localStorage))
+      if (k.startsWith(`${DB_KEY}:`)) localStorage.removeItem(k);
+  } catch {
+    /* storage blocked */
+  }
 }
 export type UpdateDB = ReturnType<typeof useDB>[1];
 
@@ -180,8 +215,14 @@ export const slug = (name: string) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
-export function withStudent(db: DB, name: string, demo = false): DB {
-  const id = slug(name);
+/** Add a student (id from the name, or an explicit id such as an account's user id). */
+export function withStudent(
+  db: DB,
+  name: string,
+  demo = false,
+  explicitId?: string,
+): DB {
+  const id = explicitId ?? slug(name);
   if (!id || db.students[id]) return db;
   return {
     ...db,

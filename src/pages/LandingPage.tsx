@@ -21,6 +21,7 @@ import { daaUnits } from "../domain/daa/units";
 import { dsUnits } from "../domain/ds/units";
 import { laUnits } from "../domain/la/units";
 import type { Unit } from "../domain/course";
+import { useAuth } from "../lib/auth";
 
 const contact = {
   email: "ayaanmittal193@gmail.com",
@@ -113,6 +114,7 @@ const steps = [
 ];
 
 export function LandingPage() {
+  const auth = useAuth();
   const { hash } = useLocation();
   const [courseId, setCourseId] = useState(courses[0].id);
   const course = courses.find((c) => c.id === courseId)!;
@@ -142,6 +144,11 @@ export function LandingPage() {
           <a href="#units">Courses</a>
           <a href="#modes">Modes</a>
           <a href="#method">Method</a>
+          {auth.enabled && (
+            <Link to="/signin" className="btn btn-secondary">
+              {auth.user ? (auth.profile?.name ?? "Account") : "Sign in"}
+            </Link>
+          )}
           <Link to="/algorithms" className="btn btn-primary">
             Launch lab <ArrowRight size={14} />
           </Link>

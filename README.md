@@ -54,15 +54,45 @@ Without a database, each browser keeps its own progress in localStorage. Connect
 2. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` with the same values (for Production and Preview).
 3. Redeploy (**Deployments → ⋯ → Redeploy**). Vite bakes these values in at build time, so a redeploy is required after any change.
 
+### 5. Turn on student and teacher accounts
+
+With Supabase connected, practising (Student mode) and the Teacher dashboard need an account; the visualizers stay open to everyone. Accounts use email + password (Supabase Auth).
+
+1. **Run the latest schema.** If you ran an older `schema.sql`, run the current one again (SQL Editor → paste → Run). It adds the `profiles` and `teacher_emails` tables and replaces the old open rules with account-based ones.
+2. **Set the site address.** In Supabase open **Authentication → URL Configuration**:
+   - **Site URL**: your live site, e.g. `https://your-site.vercel.app`
+   - **Redirect URLs**: add `https://your-site.vercel.app/signin` and `http://localhost:5173/signin`
+
+   Confirmation and password-reset emails link back to these.
+3. **Choose email confirmation.** In **Authentication → Sign In / Providers → Email**, "Confirm email" is on by default: new users must click a link before signing in. Leave it on for real use; turn it off while testing. Supabase's built-in mailer sends only a few emails per hour — for a whole class, add your own SMTP under **Authentication → Emails → SMTP Settings**.
+4. **Make yourself a teacher.** Every new account is a student. To make someone a teacher, add their email (lower-case) in **Table Editor → teacher_emails → Insert row**, or in the SQL Editor:
+
+   ```sql
+   insert into public.teacher_emails (email) values ('you@example.com');
+   ```
+
+   This works before or after they sign up; their role changes at once (they may need to sign in again). Delete the row to turn a teacher back into a student.
+5. Open `/signin` on the site, create your account and sign in. The lab sidebar shows your name, your role and a Sign out button.
+
 ### How it works
 
-- `src/lib/supabase.ts` creates the client and reads/writes the tables; `src/domain/sync.ts` works out exactly which rows changed (unit-tested in `sync.test.ts`).
-- `useDB` in `src/domain/tracking.ts` writes every change to localStorage at once and sends it to Supabase in the background. If Supabase can't be reached, the status line says "Offline" and data stays in the browser until the next visit.
-- Supabase Realtime pushes other devices' changes, so an open Teacher dashboard refreshes by itself.
+- `src/lib/auth.tsx` handles sign-in, sign-up, password reset and sign-out, and loads each user's profile (name and role). `src/pages/SignInPage.tsx` is the `/signin` page.
+- A database trigger creates the profile when someone signs up and gives them the teacher role if their email is in `teacher_emails`. Nobody can change their own role from the website.
+- `src/lib/supabase.ts` reads and writes the tables; `src/domain/sync.ts` works out exactly which rows changed (unit-tested in `sync.test.ts`).
+- `useDB` in `src/domain/tracking.ts` keeps a private browser cache per account (cleared on sign-out), writes every change there at once and sends it to Supabase in the background. If Supabase can't be reached, the status line says "Offline" and the data is uploaded on the next visit.
+- Supabase Realtime pushes changes from other devices, so an open Teacher dashboard refreshes by itself.
 
-### Security — read before sharing the link
+### Security
 
-The site still has no passwords: a student is whoever types that name. The rules in `schema.sql` let any visitor **read** all progress and **add** students, attempts and assignments, but not edit or delete real attempts (only demo students can be deleted). That is fine for a class prototype, but anyone with the link can see the class's names and scores. Before real use, add [Supabase Auth](https://supabase.com/docs/guides/auth) (email sign-in), store the user id on each row, and change the policies so students only read their own rows and only teachers read everything.
+The database rules (Row Level Security in `schema.sql`) are what protect the data, not the website:
+
+- Signed-out visitors can read and write nothing.
+- A **student** can read and add only their own answers and activity, and can't see other students.
+- A **teacher** can read every student's progress, create assignments, and add or remove the demo class.
+- Nobody can edit or delete real answers from the website, and roles can only be changed in the Supabase dashboard.
+- The publishable (anon) key in the website is meant to be public; never put the secret / service_role key in the site.
+
+Data recorded before accounts existed (students identified only by a typed name) stays in the database and is visible to teachers, but can't be claimed by a student account. Without Supabase configured, the site falls back to the old name-only mode with data kept in the browser.
 
 ## Project structure
 
@@ -74,6 +104,7 @@ The site still has no passwords: a student is whoever types that name. The rules
 │   ├── main.tsx               # Routes: "/", "/algorithms", "/data-structures", "/linear-algebra" ("/lab" redirects)
 │   ├── pages/
 │   │   ├── LandingPage.tsx    # Subject overview, course switcher, company footer
+│   │   ├── SignInPage.tsx     # /signin: sign in, create account, reset password
 │   │   ├── LabPage.tsx        # The shared lab shell (Explore / Student / Teacher)
 │   │   ├── DaaLab.tsx         # /algorithms entry (its own lazily loaded chunk)
 │   │   ├── DsLab.tsx          # /data-structures entry
@@ -99,9 +130,10 @@ The site still has no passwords: a student is whoever types that name. The rules
 │   │   ├── ds/                # units.ts, problems.ts, arrays/lists/stacks/trees/sorting logic + ds.test.ts
 │   │   └── la/                # units.ts, problems.ts, linalg.ts (matrices, RREF, eigen, Jordan…), algebra.ts, spaces.ts (ℝ³, matrix, polynomial, ℂⁿ) + la.test.ts
 │   ├── lib/supabase.ts        # Supabase client: load, save and live updates
+│   ├── lib/auth.tsx           # Student/teacher accounts: sign in, sign up, reset, roles
 │   ├── styles/                # index.css imports base, lab, per-unit, ds, la and landing styles
 │   └── assets/                # Images bundled by Vite (logo)
-├── supabase/schema.sql        # Tables, security rules and realtime setup — run once in Supabase
+├── supabase/schema.sql        # Tables, accounts/roles, security rules and realtime — run in Supabase
 ├── .env.example               # Template for VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY
 ├── vercel.json                # SPA rewrite so deep links work on refresh
 └── vite.config.ts
@@ -160,8 +192,8 @@ Follows the syllabus unit by unit (27 topics, 54 practice problems). Most visual
 ## Modes
 
 - **Explore:** interactive visualizers, input controls, intermediate states and concept notes. While a student is signed in, time spent and steps taken per topic are recorded automatically.
-- **Student (manual practice):** enter a name, see your mastery per topic, practice auto-graded problems (60 for Algorithms, 58 for Data Structures, 54 for Linear Algebra, at least two per topic), use hints, and open the matching visualizer. Teacher assignments appear here.
-- **Teacher (automated):** no grading or data entry. The dashboard derives class accuracy, weakest topics, most common misconceptions, students needing attention, a student × topic heatmap, per-student drill-down (time, steps, misconceptions), and one-click auto-assignment of the weakest topics. Export CSV/JSON.
+- **Student (manual practice):** sign in with a student account (or, without Supabase, just enter a name), see your mastery per topic, practice auto-graded problems (60 for Algorithms, 58 for Data Structures, 54 for Linear Algebra, at least two per topic), use hints, and open the matching visualizer. Teacher assignments appear here.
+- **Teacher (automated, teacher accounts only):** no grading or data entry. The dashboard derives class accuracy, weakest topics, most common misconceptions, students needing attention, a student × topic heatmap, per-student drill-down (time, steps, misconceptions), and one-click auto-assignment of the weakest topics. Export CSV/JSON.
 
 ## How tracking works
 
@@ -175,7 +207,7 @@ Follows the syllabus unit by unit (27 topics, 54 practice problems). Most visual
 
 ## Current limits
 
-- Without Supabase configured, data lives only in the browser's `localStorage`. With it, data is shared, but there is still one class for everyone who opens the site and no login (see "Security" above).
+- Without Supabase configured, data lives only in the browser's `localStorage` and there are no accounts. With it, there is still one class: every teacher sees every student (no separate classes or rosters yet).
 - Student identity is a typed name, not authentication.
 - Auto-grading covers multiple-choice and numeric problems only. The old keyword-based writing checklist is no longer used.
 - Visualizer step counts are tracked for the sorting and BFS/DFS steppers and all Unit 1 steppers; other visualizers record time only.
@@ -183,7 +215,7 @@ Follows the syllabus unit by unit (27 topics, 54 practice problems). Most visual
 
 ## Next milestones
 
-1. Supabase Auth + per-class access rules; class rosters.
+1. Classes: rosters and class codes, so each teacher sees only their own students.
 2. More problems per topic (or parameterized generators) so mastery is not based on repeats of one question.
 3. "Predict the next step" interactions inside the visualizers, logged as attempts.
 4. Real implementations for the tree, Boyer–Moore and shortest-path panels; unit tests; accessibility checks.

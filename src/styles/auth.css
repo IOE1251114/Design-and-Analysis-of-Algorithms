@@ -1,0 +1,188 @@
+/* Sign-in page (route "/signin") and account bits in the lab. */
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+}
+.auth-card {
+  width: min(440px, 100%);
+  display: grid;
+  gap: 14px;
+  padding: 28px;
+  border: 1px solid #284057;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #101925, #0e1621);
+  box-shadow: 0 24px 80px #0000003a;
+}
+.auth-brand {
+  margin-bottom: 6px;
+  color: inherit;
+  text-decoration: none;
+}
+.auth-card h1 {
+  font: 600 24px "Space Grotesk", sans-serif;
+  letter-spacing: -0.4px;
+  color: #f0f6ff;
+  margin: 0;
+}
+.auth-lead {
+  color: #8f9fb3;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+}
+.auth-lead code {
+  font: 11px "DM Mono", monospace;
+  color: #cfe8f7;
+}
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid #243246;
+  border-radius: 9px;
+  background: #0b131f;
+}
+.auth-tabs button {
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #8798ad;
+  padding: 8px;
+  font-size: 13px;
+}
+.auth-tabs button.on {
+  background: #12283a;
+  color: #dff7ff;
+  box-shadow: inset 0 0 0 1px #2c526b;
+}
+.auth-card form {
+  display: grid;
+  gap: 12px;
+}
+.auth-card label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: #b7c8db;
+}
+.auth-card label small {
+  color: #60748c;
+  font-size: 11px;
+}
+.auth-card input {
+  border: 1px solid #2a3b50;
+  background: #0a1420;
+  border-radius: 8px;
+  color: #e7edf7;
+  padding: 11px 12px;
+  font-size: 14px;
+}
+.auth-card input:focus {
+  outline: none;
+  border-color: #4d8cae;
+}
+.auth-card .btn-lg {
+  width: 100%;
+}
+.auth-msg {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.auth-msg.error {
+  background: #3a1c27;
+  border: 1px solid #6a2c3b;
+  color: #ffc2cb;
+}
+.auth-msg.notice {
+  background: #11342c;
+  border: 1px solid #1f6b55;
+  color: #b9f2dc;
+}
+.auth-links {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  text-align: center;
+  font-size: 12px;
+  color: #71849b;
+}
+.auth-links button,
+.auth-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: none;
+  color: #67d9ff;
+  font-size: 12px;
+  text-decoration: none;
+  padding: 0;
+}
+.auth-account {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid #243246;
+  border-radius: 10px;
+  background: #0b131f;
+}
+.auth-account strong {
+  font: 600 17px "Space Grotesk", sans-serif;
+  color: #f0f6ff;
+}
+.auth-account small {
+  color: #8798ad;
+  font-size: 12px;
+}
+.auth-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font: 10px "DM Mono", monospace;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  background: #12283a;
+  color: #67d9ff;
+}
+.auth-role.teacher {
+  background: #2c2614;
+  color: #f4c56a;
+}
+.auth-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.auth-actions .btn-lg {
+  width: auto;
+}
+/* Lab panels shown instead of Student/Teacher mode when signing in is needed. */
+.auth-gate .btn {
+  margin-top: 4px;
+}
+.sidebar-account {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.sidebar-account .btn {
+  flex: 1;
+  justify-content: center;
+}
+@media (max-width: 620px) {
+  .auth-card {
+    padding: 22px 18px;
+  }
+  .auth-actions {
+    grid-template-columns: 1fr;
+  }
+}

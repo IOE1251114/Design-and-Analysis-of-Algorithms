@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
@@ -10,6 +10,9 @@ import {
   GitBranch,
   GraduationCap,
   House,
+  Lock,
+  LogIn,
+  LogOut,
   Menu,
   Network,
   Search,
@@ -17,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import logo from "../assets/logo.png";
+import { useAuth } from "../lib/auth";
 import { StudentPanel } from "../components/modes/StudentPanel";
 import { TeacherDashboard } from "../components/modes/TeacherDashboard";
 import { subjects } from "../domain/subjects";
@@ -37,6 +41,7 @@ import type { Course } from "../courses/types";
 const STUDENT_KEY = "vatrix-student";
 const syncLabel: Record<SyncStatus, string> = {
   local: "Saved in this browser",
+  "signed-out": "Sign in to save your progress",
   connecting: "Connecting to the database…",
   synced: "Saved to the cloud",
   saving: "Saving…",
@@ -74,7 +79,13 @@ export function LabPage({ course }: { course: Course }) {
   const [showTheory, setShowTheory] = useState(true);
   const [navOpen, setNavOpen] = useState(false);
   const [subjectMenu, setSubjectMenu] = useState(false);
-  const [db, updateDB, syncStatus] = useDB();
+  const auth = useAuth();
+  // With Supabase configured, practice and the dashboard need an account; the visualizers never do.
+  const accounts = auth.enabled;
+  const role = auth.profile?.role;
+  const [db, updateDB, syncStatus] = useDB(
+    accounts ? (auth.user?.id ?? null) : undefined,
+  );
   const [studentName, setStudentName] = useState(readStudentName);
 
   const unit = units.find((u) => u.id === activeUnit)!;
@@ -86,8 +97,26 @@ export function LabPage({ course }: { course: Course }) {
       unit: `Unit ${u.number}`,
     })),
   );
-  const studentId = slug(studentName);
-  const student = db.students[studentId] ?? null;
+  const studentId = accounts
+    ? role === "student" && auth.user
+      ? auth.user.id
+      : ""
+    : slug(studentName);
+  const student = studentId ? (db.students[studentId] ?? null) : null;
+  const checkingAccount =
+    accounts && (auth.loading || (!!auth.user && !auth.profile));
+  const signInLink = (m: Mode) =>
+    `/signin?next=${encodeURIComponent(`${window.location.pathname}?mode=${m}`)}`;
+
+  // A signed-in student always has a progress row (the database usually creates it at sign-up).
+  useEffect(() => {
+    const user = auth.user,
+      profile = auth.profile;
+    if (!accounts || !user || profile?.role !== "student") return;
+    if (syncStatus !== "synced" && syncStatus !== "offline") return;
+    if (!db.students[user.id])
+      updateDB((d) => withStudent(d, profile.name, false, user.id));
+  }, [accounts, auth.user, auth.profile, syncStatus, db, updateDB]);
   const isMastered = (topicId: string) =>
     !!student && (topicStats(student, topicId).mastery ?? 0) >= MASTERED;
   const masteredPct = Math.round(
@@ -315,12 +344,38 @@ export function LabPage({ course }: { course: Course }) {
               <GraduationCap size={18} />
             </div>
             <div>
-              <strong>{student?.name ?? "Not signed in"}</strong>
+              <strong>
+                {accounts
+                  ? (auth.profile?.name ?? "Not signed in")
+                  : (student?.name ?? "Not signed in")}
+              </strong>
               <small>
-                {student ? "Progress is tracked" : "Open Student mode to start"}
+                {accounts
+                  ? auth.user
+                    ? `${role === "teacher" ? "Teacher" : "Student"} · ${auth.user.email}`
+                    : "Sign in to track progress"
+                  : student
+                    ? "Progress is tracked"
+                    : "Open Student mode to start"}
               </small>
             </div>
           </div>
+          {accounts && (
+            <div className="sidebar-account">
+              {auth.user ? (
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => void auth.signOut()}
+                >
+                  <LogOut size={13} /> Sign out
+                </button>
+              ) : (
+                <Link className="btn btn-primary" to={signInLink(mode)}>
+                  <LogIn size={13} /> Sign in
+                </Link>
+              )}
+            </div>
+          )}
           <p className={`sync-status sync-${syncStatus}`} role="status">
             <span className="sync-dot" /> {syncLabel[syncStatus]}
           </p>
@@ -415,26 +470,95 @@ export function LabPage({ course }: { course: Course }) {
             </div>
           </section>
 
-          {mode === "teacher" && (
-            <TeacherDashboard
-              db={db}
-              update={updateDB}
-              topics={topicRefs}
-              onOpenVisualizer={openVisualizer}
-            />
-          )}
-          {mode === "student" && (
-            <StudentPanel
-              db={db}
-              student={student}
-              topics={topicRefs}
-              activeTopic={activeTopic}
-              onLogin={login}
-              onLogout={logout}
-              onAttempt={(a) => updateDB((d) => withAttempt(d, studentId, a))}
-              onOpenVisualizer={openVisualizer}
-            />
-          )}
+          {mode === "teacher" &&
+            (accounts && checkingAccount ? (
+              <Gate title="Checking your account…" text="One moment." />
+            ) : accounts && !auth.user ? (
+              <Gate
+                title="Teachers only"
+                text="Sign in with a teacher account to see class progress, misconceptions and assignments."
+                actions={
+                  <Link className="btn btn-primary" to={signInLink("teacher")}>
+                    <LogIn size={14} /> Sign in
+                  </Link>
+                }
+              />
+            ) : accounts && role !== "teacher" ? (
+              <Gate
+                title="Teachers only"
+                text={`You're signed in as ${auth.profile?.name ?? "a student"} with a student account. Teacher access is given by the site owner: ask them to add your email to the teacher list, then sign in again.`}
+                actions={
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => setMode("student")}
+                  >
+                    <GraduationCap size={14} /> Go to your practice
+                  </button>
+                }
+              />
+            ) : (
+              <TeacherDashboard
+                db={db}
+                update={updateDB}
+                topics={topicRefs}
+                onOpenVisualizer={openVisualizer}
+              />
+            ))}
+          {mode === "student" &&
+            (accounts && checkingAccount ? (
+              <Gate title="Checking your account…" text="One moment." />
+            ) : accounts && !auth.user ? (
+              <Gate
+                title="Sign in to practise"
+                text="Your answers, mastery and time in the visualizers are saved to your account, so you can pick up on any device. Exploring the visualizers needs no account."
+                actions={
+                  <>
+                    <Link
+                      className="btn btn-primary"
+                      to={signInLink("student")}
+                    >
+                      <LogIn size={14} /> Sign in
+                    </Link>
+                    <Link
+                      className="btn btn-secondary"
+                      to={`${signInLink("student")}&tab=signup`}
+                    >
+                      Create a student account
+                    </Link>
+                  </>
+                }
+              />
+            ) : accounts && role === "teacher" ? (
+              <Gate
+                title="You're signed in as a teacher"
+                text="Student practice is for student accounts. Your class's results are in Teacher mode."
+                actions={
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => setMode("teacher")}
+                  >
+                    <BookOpen size={14} /> Open Teacher mode
+                  </button>
+                }
+              />
+            ) : accounts && !student ? (
+              <Gate
+                title="Loading your progress…"
+                text="Fetching your answers from the database."
+              />
+            ) : (
+              <StudentPanel
+                db={db}
+                student={student}
+                topics={topicRefs}
+                activeTopic={activeTopic}
+                onLogin={login}
+                onLogout={accounts ? () => void auth.signOut() : logout}
+                logoutLabel={accounts ? "Sign out" : undefined}
+                onAttempt={(a) => updateDB((d) => withAttempt(d, studentId, a))}
+                onOpenVisualizer={openVisualizer}
+              />
+            ))}
 
           {mode === "explore" && (
             <>
@@ -514,5 +638,32 @@ export function LabPage({ course }: { course: Course }) {
         </div>
       </main>
     </div>
+  );
+}
+
+/** Shown in place of Student or Teacher mode when an account (or a different role) is needed. */
+function Gate({
+  title,
+  text,
+  actions,
+}: {
+  title: string;
+  text: string;
+  actions?: ReactNode;
+}) {
+  return (
+    <section className="panel auth-gate">
+      <div className="panel-heading">
+        <div>
+          <span className="kicker">ACCOUNT</span>
+          <h2>{title}</h2>
+          <p>{text}</p>
+        </div>
+        <span className="panel-icon">
+          <Lock size={19} />
+        </span>
+      </div>
+      {actions && <div className="la-row">{actions}</div>}
+    </section>
   );
 }

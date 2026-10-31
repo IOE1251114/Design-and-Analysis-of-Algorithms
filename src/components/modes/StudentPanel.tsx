@@ -9,7 +9,12 @@ import {
   Target,
   UserRound,
 } from "lucide-react";
-import { grade, problems, problemsFor, type Problem } from "../../domain/problems";
+import {
+  grade,
+  problems,
+  problemsFor,
+  type Problem,
+} from "../../domain/problems";
 import {
   statusLabel,
   statusOf,
@@ -28,6 +33,8 @@ interface Props {
   activeTopic: string;
   onLogin: (name: string) => void;
   onLogout: () => void;
+  /** Label for the logout button ("Switch student" by default). */
+  logoutLabel?: string;
   onAttempt: (a: Attempt) => void;
   onOpenVisualizer: (topicId: string) => void;
 }
@@ -40,6 +47,7 @@ export function StudentPanel({
   activeTopic,
   onLogin,
   onLogout,
+  logoutLabel = "Switch student",
   onAttempt,
   onOpenVisualizer,
 }: Props) {
@@ -124,7 +132,7 @@ export function StudentPanel({
             </p>
           </div>
           <button className="btn btn-secondary" onClick={onLogout}>
-            <LogOut size={14} /> Switch student
+            <LogOut size={14} /> {logoutLabel}
           </button>
         </div>
         {weak.length > 0 ? (
